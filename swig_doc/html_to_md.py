@@ -135,7 +135,6 @@ if __name__ == "__main__":
 
     repo_root = Path(__file__).parents[1]
 
-    # html_file = repo_root.parent.joinpath("swig", "Doc", "Manual", "Python.html")
     html_path = repo_root.joinpath("tmp_data", "Manual")
     out_path = repo_root.joinpath("docs")
 
