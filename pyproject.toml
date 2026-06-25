@@ -1,0 +1,13 @@
+[project]
+name = "swig-doc"
+version = "0.1"
+
+[dependency-groups]
+base = ["zensical", "beautifulsoup4>=4.0.0"]
+test = ["pytest>=9.0.3", "pytest-cov>=7.1.0"]
+dev = ["nox", "flake8"]
+all = [
+    { include-group = "base" },
+    { include-group = "test" },
+    { include-group = "dev" },
+]
