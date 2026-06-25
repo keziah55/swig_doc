@@ -2,17 +2,10 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-import re
 
 from bs4 import BeautifulSoup
 
-
-_MARKDOWN_EXT = ".md"
-
-
-def _make_md_head(title: str, level: int) -> str:
-    """Make markdown header string."""
-    return f"{'#' * level} {title}"
+from .md_utils import MARKDOWN_EXT, make_md_head
 
 
 @dataclass
@@ -25,13 +18,13 @@ class PageSection:
     def make_md(self) -> str:
         """Make all markdown for this section."""
 
-        s = self._make_md_head()
+        s = self.make_md_head()
 
         return s
 
-    def _make_md_head(self) -> str:
+    def make_md_head(self) -> str:
         """Make markdown header string."""
-        return _make_md_head(self.title, self.level)
+        return make_md_head(self.title, self.level)
 
 
 class HtmlPageParser:
@@ -107,10 +100,10 @@ class SwigDocParser:
     def _write_index(self):
         """Write `index.md` page listing all pages."""
 
-        index_file = self._out_path.joinpath(f"index{_MARKDOWN_EXT}")
+        index_file = self._out_path.joinpath(f"index{MARKDOWN_EXT}")
 
-        lines = [_make_md_head("SWIG", 1)]
-        lines += [f"- [{name}]({name}{_MARKDOWN_EXT})" for name in self._chapters]
+        lines = [make_md_head("SWIG", 1)]
+        lines += [f"- [{name}]({name}{MARKDOWN_EXT})" for name in self._chapters]
 
         index_file.write_text("\n".join(lines))
 
@@ -126,7 +119,7 @@ class SwigDocParser:
         parser = HtmlPageParser(html_file)
         text = parser.parse()
 
-        out_file = self._out_path.joinpath(f"{name}{_MARKDOWN_EXT}")
+        out_file = self._out_path.joinpath(f"{name}{MARKDOWN_EXT}")
 
         out_file.write_text(text)
 
