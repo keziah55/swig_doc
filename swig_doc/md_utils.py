@@ -15,7 +15,7 @@ def make_md_head(title: str, level: int) -> str:
     return f"{'#' * level} {title}"
 
 
-def make_code_block(code_tag: Tag, target_language: str) -> str:
+def code_block(code_tag: Tag, target_language: str) -> str:
     """
     Make md code block from `<code>` tag.
 
@@ -52,3 +52,7 @@ def make_code_block(code_tag: Tag, target_language: str) -> str:
             language = ""
 
     return template.substitute(language=language, content=content)
+
+
+def header(header_tag: Tag) -> str:
+    pass
