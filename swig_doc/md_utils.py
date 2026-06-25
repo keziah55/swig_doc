@@ -1,5 +1,6 @@
 from string import Template
 import html
+import re
 
 from bs4 import Tag
 
@@ -55,4 +56,19 @@ def code_block(code_tag: Tag, target_language: str) -> str:
 
 
 def header(header_tag: Tag) -> str:
-    pass
+    
+    if header_tag.a is not None:
+        title = header_tag.a.string
+        attrs = header_tag.a.attrs
+        anchor = " " + " ".join([f'{key}="{value}"' for key, value in attrs.items()])
+        a = f"<a{anchor}></a> "
+    else:
+        title = header_tag.string
+        a = ""
+
+    if (m := re.match(r"h(?P<level>\d+)", header_tag.name)) is not None:
+        header_level = int(m.group("level"))
+    else:
+        raise ParsingException(f"Cannot get header level from '{header_tag.name}'")
+
+    return make_md_head(f"{a}{title}", header_level)

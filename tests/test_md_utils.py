@@ -13,18 +13,18 @@ class MockTag:
         tag_name: str,
         attrs: Optional[dict] = None,
         text: str = "",
-        children: Optional[dict[:str, Self]] = None,
+        children: Optional[list[Self]] = None,
     ):
 
         self.string = text
 
-        self._tag = tag_name
-        self._attrs = attrs if attrs is not None else {}
+        self.name = tag_name
+        self.attrs = attrs if attrs is not None else {}
 
-        self._children = children if children is not None else {}
+        self._children = {child.name: child for child in children} if children is not None else {}
 
     def __getitem__(self, key) -> str:
-        return self._attrs.get(key)
+        return self.attrs.get(key)
 
     def __getattr__(self, name) -> Self:
         return self._children.get(name)
@@ -32,7 +32,7 @@ class MockTag:
     def __repr__(self) -> str:
         # attrs = [f'{key}="{value}"' for key, value in self._attrs.items()]
         attrs = []
-        for key, value_lst in self._attrs.items():
+        for key, value_lst in self.attrs.items():
             attrs += [f'{key}="{value}"' for value in value_lst]
 
         if len(attrs) > 0:
@@ -46,7 +46,7 @@ class MockTag:
         else:
             children_str = ""
 
-        return f"<{self._tag}{attrs_str}>{self.string}{children_str}</{self._tag}>"
+        return f"<{self.name}{attrs_str}>{self.string}{children_str}</{self.name}>"
 
 
 @pytest.mark.parametrize(
@@ -56,12 +56,12 @@ class MockTag:
             MockTag(
                 "div",
                 attrs={"class": ["targetlang"]},
-                children={
-                    "pre": MockTag(
+                children=[
+                    MockTag(
                         "pre",
                         text="$ python\n&gt;&gt;&gt; import example\n&gt;&gt;&gt; example.fact(4)\n24\n&gt;&gt;&gt;",
                     )
-                },
+                ],
             ),
             "```python\n$ python\n>>> import example\n>>> example.fact(4)\n24\n>>>\n```",
         ),
@@ -69,12 +69,12 @@ class MockTag:
             MockTag(
                 "div",
                 attrs={"class": ["code"]},
-                children={
-                    "pre": MockTag(
+                children=[
+                    MockTag(
                         "pre",
                         text='/* File: example.i */\n%module example\n\n%{\n#include "example.h"\n%}\n\nint fact(int n);',
-                    )
-                },
+                    ),
+                ],
             ),
             '```swig\n/* File: example.i */\n%module example\n\n%{\n#include "example.h"\n%}\n\nint fact(int n);\n```',
         ),
@@ -82,12 +82,12 @@ class MockTag:
             MockTag(
                 "div",
                 attrs={"class": ["shell"]},
-                children={
-                    "pre": MockTag(
+                children=[
+                    MockTag(
                         "pre",
                         text="$ swig -python example.i",
                     )
-                },
+                ],
             ),
             "```shell\n$ swig -python example.i\n```",
         ),
@@ -95,12 +95,12 @@ class MockTag:
             MockTag(
                 "div",
                 attrs={"class": ["diagram"]},
-                children={
-                    "pre": MockTag(
+                children=[
+                    MockTag(
                         "pre",
                         text="mod1.py\npkg1/__init__.py\npkg1/mod2.py\npkg1/pkg2/__init__.py\npkg1/pkg2/mod3.py",
                     )
-                },
+                ],
             ),
             "```\nmod1.py\npkg1/__init__.py\npkg1/mod2.py\npkg1/pkg2/__init__.py\npkg1/pkg2/mod3.py\n```",
         ),
@@ -116,13 +116,11 @@ def test_code_block(tag, expected):
     [
         (MockTag("div"), r"Could not get content of 'pre' tag in:\n<div></div>"),
         (
-            MockTag(
-                "div", attrs={"class": ["a", "b"]}, children={"pre": MockTag("pre", text="demo")}
-            ),
+            MockTag("div", attrs={"class": ["a", "b"]}, children=[MockTag("pre", text="demo")]),
             r"Multiple classes in tag; cannot determine code language",
         ),
         (
-            MockTag("div", attrs={"class": []}, children={"pre": MockTag("pre", text="demo")}),
+            MockTag("div", attrs={"class": []}, children=[MockTag("pre", text="demo")]),
             r"No code language class in",
         ),
     ],
@@ -135,3 +133,29 @@ def test_code_block_error(tag, err_msg):
 
 def test_make_md_head():
     assert make_md_head("Heading", level=4) == "#### Heading"
+
+
+@pytest.mark.parametrize(
+    "tag, expected",
+    [
+        (
+            MockTag("h4", children=[MockTag("a", attrs={"name": "Python"}, text="Python")]),
+            '#### <a name="Python"></a> Python',
+        ),
+        (
+            MockTag("h1", text="Python"),
+            "# Python",
+        ),
+    ],
+)
+def test_header(tag, expected):
+
+    assert header(tag) == expected
+
+
+def test_header_error():
+
+    tag = MockTag("h", text="Python")
+
+    with pytest.raises(ParsingException, match=r"Cannot get header level from 'h'"):
+        header(tag)
