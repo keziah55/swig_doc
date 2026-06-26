@@ -2,8 +2,9 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+import html
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 
 from .md_utils import MARKDOWN_EXT, make_md_head
 
@@ -52,7 +53,16 @@ class HtmlPageParser:
 
         text = "\n".join([section.make_md() for section in self._sections])
 
+        # convert html entities into unicode
+        text = html.unescape(text)
+
         return text
+
+    def _walk(self):
+
+        for item in self._soup.descendants:
+            if isinstance(item, Comment):
+                continue
 
 
 class SwigDocParser:

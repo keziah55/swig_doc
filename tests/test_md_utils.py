@@ -1,6 +1,6 @@
 from typing import Optional, Self
 
-from swig_doc.md_utils import code_block, make_md_head, header
+from swig_doc.md_utils import MarkdownFormatter
 from swig_doc.exceptions import ParsingException
 
 import pytest
@@ -63,7 +63,8 @@ class MockTag:
                     )
                 ],
             ),
-            "```python\n$ python\n>>> import example\n>>> example.fact(4)\n24\n>>>\n```",
+            "```python\n$ python\n&gt;&gt;&gt; import example\n&gt;&gt;&gt; example.fact(4)\n24\n&gt;&gt;&gt;\n```",
+            # "```python\n$ python\n>>> import example\n>>> example.fact(4)\n24\n>>>\n```",
         ),
         (
             MockTag(
@@ -108,7 +109,7 @@ class MockTag:
 )
 def test_code_block(tag, expected):
 
-    assert code_block(tag, target_language="python") == expected
+    assert MarkdownFormatter.code_block(tag, target_language="python") == expected
 
 
 @pytest.mark.parametrize(
@@ -128,11 +129,11 @@ def test_code_block(tag, expected):
 def test_code_block_error(tag, err_msg):
 
     with pytest.raises(ParsingException, match=err_msg):
-        code_block(tag, target_language="python")
+        MarkdownFormatter.code_block(tag, target_language="python")
 
 
 def test_make_md_head():
-    assert make_md_head("Heading", level=4) == "#### Heading"
+    assert MarkdownFormatter.make_md_head("Heading", level=4) == "#### Heading"
 
 
 @pytest.mark.parametrize(
@@ -150,7 +151,7 @@ def test_make_md_head():
 )
 def test_header(tag, expected):
 
-    assert header(tag) == expected
+    assert MarkdownFormatter.header(tag) == expected
 
 
 def test_header_error():
@@ -158,4 +159,4 @@ def test_header_error():
     tag = MockTag("h", text="Python")
 
     with pytest.raises(ParsingException, match=r"Cannot get header level from 'h'"):
-        header(tag)
+        MarkdownFormatter.header(tag)
