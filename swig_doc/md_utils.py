@@ -1,5 +1,6 @@
 from string import Template
 import re
+from typing import Optional
 
 from bs4 import Tag
 
@@ -9,7 +10,7 @@ MARKDOWN_EXT = ".md"
 
 
 class MarkdownFormatter:
-    """Collection of static functions for converting
+    """Collection of functions for converting
     [BeautifulSoup `Tag`](https://beautiful-soup-4.readthedocs.io/en/latest/#tag)
     to markdown strings.
 
@@ -17,17 +18,52 @@ class MarkdownFormatter:
 
     _templates = {"code": Template("```${language}\n${content}\n```")}
 
+    def __init__(self, target_language: Optional[str] = None):
+
+        if target_language is None:
+            target_language = ""
+        self._target_language = target_language
+
+    def convert_tag(self, tag: Tag) -> str:
+        """Convert `Tag` to markdown string."""
+
+        tag_type = type(tag).__name__
+
+        if tag_type == "Tag":
+            tag_type = tag.name
+
+        match type(tag).__name__:
+            case re.match(r"h\d+", tag_type):
+                func = self.header
+            case "comment":
+                func = self.comment
+            case "code":
+                func = self.code
+            case "p":
+                func = self.paragraph
+            case "navigablestring":
+                func = lambda s: s
+            case _:
+                raise ParsingException(f"No format function for '{tag_type}' tag")
+
+        return func(tag)
+
     @staticmethod
     def make_md_head(title: str, level: int) -> str:
         """Make markdown header string."""
         return f"{'#' * level} {title}"
+
+    def code(self, code_tag: Tag) -> str:
+        """See `code_block`."""
+
+        return self.code_block(code_tag, target_language=self._target_language)
 
     @classmethod
     def code_block(cls, code_tag: Tag, target_language: str) -> str:
         """
         Make md code block from `<code>` tag.
 
-        The target language must be provided, in case it is needed.
+        The target language must be provided, but can be empty string.
         """
 
         template = cls._templates["code"]
@@ -83,3 +119,8 @@ class MarkdownFormatter:
         """Make comment string."""
 
         return f"<!--{comment_tag.string}-->"
+
+    @staticmethod
+    def paragraph(p_tag: Tag) -> str:
+        """Make paragraph string."""
+        return p_tag.string

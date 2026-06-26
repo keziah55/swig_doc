@@ -3,10 +3,11 @@
 from dataclasses import dataclass
 from pathlib import Path
 import html
+from typing import Optional
 
 from bs4 import BeautifulSoup, Comment
 
-from .md_utils import MARKDOWN_EXT, make_md_head
+from .md_utils import MARKDOWN_EXT, MarkdownFormatter
 
 
 @dataclass
@@ -25,7 +26,7 @@ class PageSection:
 
     def make_md_head(self) -> str:
         """Make markdown header string."""
-        return make_md_head(self.title, self.level)
+        return MarkdownFormatter.make_md_head(self.title, self.level)
 
 
 class HtmlPageParser:
@@ -36,33 +37,47 @@ class HtmlPageParser:
     ----------
     html_file
         File to parse.
+    target_language
+        Language that is the subject of this html page. Pass `None` if there is no
+        target language.
     """
 
-    def __init__(self, html_file: Path):
+    def __init__(self, html_file: Path, target_language: Optional[str] = None):
 
         html_text = html_file.read_text()
         self._soup = BeautifulSoup(html_text, "html.parser")
 
         self._sections = []
 
+        self._md_formatter = MarkdownFormatter(target_language=target_language)
+
     def parse(self) -> str:
         """Parse html and generate string of markdown."""
 
-        for tag in self._soup.find_all("h1"):
-            self._sections.append(PageSection(title=tag.string, level=1, anchor=tag.a["name"]))
+        # for tag in self._soup.find_all("h1"):
+        #     self._sections.append(PageSection(title=tag.string, level=1, anchor=tag.a["name"]))
 
-        text = "\n".join([section.make_md() for section in self._sections])
+        # text = "\n".join([section.make_md() for section in self._sections])
+
+        elements = self._walk()
+        text = "\n".join(elements)
 
         # convert html entities into unicode
         text = html.unescape(text)
 
         return text
 
-    def _walk(self):
+    def _walk(self) -> list[str]:
 
-        for item in self._soup.descendants:
-            if isinstance(item, Comment):
+        elements = []
+
+        for item in self._soup.body.descendants:
+            if item.name == "div" and "sectiontoc" in item["class"]:
                 continue
+            else:
+                elements.append(self._md_formatter.convert_tag(item))
+
+        return elements
 
 
 class SwigDocParser:
@@ -112,7 +127,7 @@ class SwigDocParser:
 
         index_file = self._out_path.joinpath(f"index{MARKDOWN_EXT}")
 
-        lines = [make_md_head("SWIG", 1)]
+        lines = [MarkdownFormatter.make_md_head("SWIG", 1)]
         lines += [f"- [{name}]({name}{MARKDOWN_EXT})" for name in self._chapters]
 
         index_file.write_text("\n".join(lines))
