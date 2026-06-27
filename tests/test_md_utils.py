@@ -6,7 +6,6 @@ from swig_doc.md_utils import MarkdownFormatter
 from swig_doc.exceptions import ParsingException
 
 import pytest
-from .conftest import MockTag
 
 
 @pytest.mark.parametrize("code_type", ["targetlang", "code", "shell", "diagram"])
@@ -25,20 +24,23 @@ def test_code_block(data_dir, code_type):
 
 
 @pytest.mark.parametrize(
-    "tag,err_msg",
+    "html,err_msg",
     [
-        (MockTag("div"), r"Could not get content of 'pre' tag in:\n<div></div>"),
+        ("<div></div>", r"Could not get content of 'pre' tag in:\n<div></div>"),
         (
-            MockTag("div", attrs={"class": ["a", "b"]}, children=[MockTag("pre", text="demo")]),
+            '<div class="a b"><pre>demo</pre></div>',
             r"Multiple classes in tag; cannot determine code language",
         ),
         (
-            MockTag("div", attrs={"class": []}, children=[MockTag("pre", text="demo")]),
+            '<div class=""><pre>demo</pre></div>',
             r"No code language class in",
         ),
     ],
 )
-def test_code_block_error(tag, err_msg):
+def test_code_block_error(html, err_msg):
+
+    soup = BeautifulSoup(html, "html.parser")
+    tag = soup.find("div")
 
     with pytest.raises(ParsingException, match=err_msg):
         MarkdownFormatter.code_block(tag, target_language="python")
@@ -49,26 +51,25 @@ def test_make_md_head():
 
 
 @pytest.mark.parametrize(
-    "tag, expected",
+    "html, expected",
     [
-        (
-            MockTag("h4", children=[MockTag("a", attrs={"name": "Python"}, text="Python")]),
-            '#### <a name="Python"></a> Python',
-        ),
-        (
-            MockTag("h1", text="Python"),
-            "# Python",
-        ),
+        ('<h4><a name="Python">Python</a></h4>', '#### <a name="Python"></a> Python'),
+        ("<h1>Python</h1>", "# Python"),
     ],
 )
-def test_header(tag, expected):
+def test_header(html, expected):
+
+    soup = BeautifulSoup(html, "html.parser")
+    tag = list(soup.descendants)[0]
 
     assert MarkdownFormatter.header(tag) == expected
 
 
 def test_header_error():
 
-    tag = MockTag("h", text="Python")
+    html = "<h>Python<h>"
+    soup = BeautifulSoup(html, "html.parser")
+    tag = soup.find("h")
 
     with pytest.raises(ParsingException, match=r"Cannot get header level from 'h'"):
         MarkdownFormatter.header(tag)
