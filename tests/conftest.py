@@ -85,4 +85,4 @@ Here's a
 > starts here
 > 
 > over multiple lines
-    """
+    """  # noqa W291

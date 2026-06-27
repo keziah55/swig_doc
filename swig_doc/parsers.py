@@ -55,7 +55,8 @@ class HtmlPageParser:
         """Parse html and generate string of markdown."""
 
         # for tag in self._soup.find_all("h1"):
-        #     self._sections.append(PageSection(title=tag.string, level=1, anchor=tag.a["name"]))
+        #     self._sections.append(PageSection(title=tag.string, level=1,
+        #     anchor=tag.a["name"]))
 
         # text = "\n".join([section.make_md() for section in self._sections])
 

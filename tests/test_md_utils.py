@@ -21,7 +21,9 @@ class MockTag:
         self.name = tag_name
         self.attrs = attrs if attrs is not None else {}
 
-        self._children = {child.name: child for child in children} if children is not None else {}
+        self._children = (
+            {child.name: child for child in children} if children is not None else {}
+        )
 
     def __getitem__(self, key) -> str:
         return self.attrs.get(key)
@@ -59,11 +61,17 @@ class MockTag:
                 children=[
                     MockTag(
                         "pre",
-                        text="$ python\n&gt;&gt;&gt; import example\n&gt;&gt;&gt; example.fact(4)\n24\n&gt;&gt;&gt;",
+                        text=(
+                            "$ python\n&gt;&gt;&gt; import example\n&gt;&gt;&gt; "
+                            "example.fact(4)\n24\n&gt;&gt;&gt;)"
+                        ),
                     )
                 ],
             ),
-            "```python\n$ python\n&gt;&gt;&gt; import example\n&gt;&gt;&gt; example.fact(4)\n24\n&gt;&gt;&gt;\n```",
+            (
+                "```python\n$ python\n&gt;&gt;&gt; import example\n&gt;&gt;&gt; "
+                "example.fact(4)\n24\n&gt;&gt;&gt;\n```"
+            ),
             # "```python\n$ python\n>>> import example\n>>> example.fact(4)\n24\n>>>\n```",
         ),
         (
@@ -73,11 +81,17 @@ class MockTag:
                 children=[
                     MockTag(
                         "pre",
-                        text='/* File: example.i */\n%module example\n\n%{\n#include "example.h"\n%}\n\nint fact(int n);',
+                        text=(
+                            "/* File: example.i */\n%module example\n\n%{\n#include "
+                            '"example.h"\n%}\n\nint fact(int n);'
+                        ),
                     ),
                 ],
             ),
-            '```swig\n/* File: example.i */\n%module example\n\n%{\n#include "example.h"\n%}\n\nint fact(int n);\n```',
+            (
+                "```swig\n/* File: example.i */\n%module example\n\n%{\n#include "
+                '"example.h"\n%}\n\nint fact(int n);\n```'
+            ),
         ),
         (
             MockTag(
@@ -99,11 +113,17 @@ class MockTag:
                 children=[
                     MockTag(
                         "pre",
-                        text="mod1.py\npkg1/__init__.py\npkg1/mod2.py\npkg1/pkg2/__init__.py\npkg1/pkg2/mod3.py",
+                        text=(
+                            "mod1.py\npkg1/__init__.py\npkg1/mod2.py\npkg1/pkg2/__init__.py\n"
+                            "pkg1/pkg2/mod3.py"
+                        ),
                     )
                 ],
             ),
-            "```\nmod1.py\npkg1/__init__.py\npkg1/mod2.py\npkg1/pkg2/__init__.py\npkg1/pkg2/mod3.py\n```",
+            (
+                "```\nmod1.py\npkg1/__init__.py\npkg1/mod2.py\npkg1/pkg2/__init__.py\n"
+                "pkg1/pkg2/mod3.py\n```"
+            ),
         ),
     ],
 )

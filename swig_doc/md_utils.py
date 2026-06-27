@@ -42,11 +42,14 @@ class MarkdownFormatter:
             case "p":
                 func = self.paragraph
             case "navigablestring":
-                func = lambda s: s
+                func = None
             case _:
                 raise ParsingException(f"No format function for '{tag_type}' tag")
 
-        return func(tag)
+        if func is None:
+            return tag
+        else:
+            return func(tag)
 
     @staticmethod
     def make_md_head(title: str, level: int, custom_id: Optional[str] = None) -> str:
