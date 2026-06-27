@@ -160,3 +160,8 @@ def test_header_error():
 
     with pytest.raises(ParsingException, match=r"Cannot get header level from 'h'"):
         MarkdownFormatter.header(tag)
+
+
+def test_convert_text_format(sample_html, sample_md):
+
+    assert MarkdownFormatter.convert_text_format(sample_html) == sample_md

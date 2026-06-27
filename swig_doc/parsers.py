@@ -5,7 +5,7 @@ from pathlib import Path
 import html
 from typing import Optional
 
-from bs4 import BeautifulSoup, Comment
+from bs4 import BeautifulSoup
 
 from .md_utils import MARKDOWN_EXT, MarkdownFormatter
 
