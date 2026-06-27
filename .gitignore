@@ -4,6 +4,7 @@
 site
 docs
 tmp_data
+coverage_report
 
 ### Django ###
 *.log
