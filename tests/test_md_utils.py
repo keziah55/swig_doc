@@ -63,7 +63,7 @@ class MockTag:
                         "pre",
                         text=(
                             "$ python\n&gt;&gt;&gt; import example\n&gt;&gt;&gt; "
-                            "example.fact(4)\n24\n&gt;&gt;&gt;)"
+                            "example.fact(4)\n24\n&gt;&gt;&gt;"
                         ),
                     )
                 ],
