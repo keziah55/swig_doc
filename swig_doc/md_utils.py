@@ -228,7 +228,7 @@ class MarkdownFormatter:
             case "diagram":
                 language = ""
 
-        return template.substitute(language=language, content=content)
+        return template.substitute(language=language, content=content.strip())
 
     @classmethod
     def header(cls, tag: Tag) -> str:

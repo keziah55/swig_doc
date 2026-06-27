@@ -1,135 +1,27 @@
-from typing import Optional, Self
+import json
+
+from bs4 import BeautifulSoup
 
 from swig_doc.md_utils import MarkdownFormatter
 from swig_doc.exceptions import ParsingException
 
 import pytest
+from .conftest import MockTag
 
 
-class MockTag:
+@pytest.mark.parametrize("code_type", ["targetlang", "code", "shell", "diagram"])
+def test_code_block(data_dir, code_type):
 
-    def __init__(
-        self,
-        tag_name: str,
-        attrs: Optional[dict] = None,
-        text: str = "",
-        children: Optional[list[Self]] = None,
-    ):
+    html = data_dir.joinpath("code_blocks.html").read_text()
 
-        self.string = text
+    with open(data_dir.joinpath("code_blocks_md.json")) as fileobj:
+        md = json.load(fileobj)
 
-        self.name = tag_name
-        self.attrs = attrs if attrs is not None else {}
+    soup = BeautifulSoup(html, "html.parser")
 
-        self._children = (
-            {child.name: child for child in children} if children is not None else {}
-        )
-
-    def __getitem__(self, key) -> str:
-        return self.attrs.get(key)
-
-    def __getattr__(self, name) -> Self:
-        return self._children.get(name)
-
-    def __repr__(self) -> str:
-        # attrs = [f'{key}="{value}"' for key, value in self._attrs.items()]
-        attrs = []
-        for key, value_lst in self.attrs.items():
-            attrs += [f'{key}="{value}"' for value in value_lst]
-
-        if len(attrs) > 0:
-            attrs_str = " " + " ".join(attrs)
-        else:
-            attrs_str = ""
-
-        children = [str(child) for child in self._children.values()]
-        if len(children):
-            children_str = "\n" + "\n".join(children)
-        else:
-            children_str = ""
-
-        return f"<{self.name}{attrs_str}>{self.string}{children_str}</{self.name}>"
-
-
-@pytest.mark.parametrize(
-    "tag, expected",
-    [
-        (
-            MockTag(
-                "div",
-                attrs={"class": ["targetlang"]},
-                children=[
-                    MockTag(
-                        "pre",
-                        text=(
-                            "$ python\n&gt;&gt;&gt; import example\n&gt;&gt;&gt; "
-                            "example.fact(4)\n24\n&gt;&gt;&gt;"
-                        ),
-                    )
-                ],
-            ),
-            (
-                "```python\n$ python\n&gt;&gt;&gt; import example\n&gt;&gt;&gt; "
-                "example.fact(4)\n24\n&gt;&gt;&gt;\n```"
-            ),
-            # "```python\n$ python\n>>> import example\n>>> example.fact(4)\n24\n>>>\n```",
-        ),
-        (
-            MockTag(
-                "div",
-                attrs={"class": ["code"]},
-                children=[
-                    MockTag(
-                        "pre",
-                        text=(
-                            "/* File: example.i */\n%module example\n\n%{\n#include "
-                            '"example.h"\n%}\n\nint fact(int n);'
-                        ),
-                    ),
-                ],
-            ),
-            (
-                "```swig\n/* File: example.i */\n%module example\n\n%{\n#include "
-                '"example.h"\n%}\n\nint fact(int n);\n```'
-            ),
-        ),
-        (
-            MockTag(
-                "div",
-                attrs={"class": ["shell"]},
-                children=[
-                    MockTag(
-                        "pre",
-                        text="$ swig -python example.i",
-                    )
-                ],
-            ),
-            "```shell\n$ swig -python example.i\n```",
-        ),
-        (
-            MockTag(
-                "div",
-                attrs={"class": ["diagram"]},
-                children=[
-                    MockTag(
-                        "pre",
-                        text=(
-                            "mod1.py\npkg1/__init__.py\npkg1/mod2.py\npkg1/pkg2/__init__.py\n"
-                            "pkg1/pkg2/mod3.py"
-                        ),
-                    )
-                ],
-            ),
-            (
-                "```\nmod1.py\npkg1/__init__.py\npkg1/mod2.py\npkg1/pkg2/__init__.py\n"
-                "pkg1/pkg2/mod3.py\n```"
-            ),
-        ),
-    ],
-)
-def test_code_block(tag, expected):
-
-    assert MarkdownFormatter.code_block(tag, target_language="python") == expected
+    for tag in soup.find_all("div", attrs={"class_": code_type}):
+        expected = md[code_type]
+        assert MarkdownFormatter.code_block(tag, target_language="python") == expected
 
 
 @pytest.mark.parametrize(
@@ -182,6 +74,9 @@ def test_header_error():
         MarkdownFormatter.header(tag)
 
 
-def test_convert_text_format(sample_html, sample_md):
+def test_convert_text_format(data_dir):
 
-    assert MarkdownFormatter.convert_text_format(sample_html) == sample_md
+    html = data_dir.joinpath("convert_text_format.html").read_text()
+    expected = data_dir.joinpath("convert_text_format.md").read_text()
+
+    assert MarkdownFormatter.convert_text_format(html) == expected

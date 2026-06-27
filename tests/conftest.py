@@ -1,88 +1,54 @@
+from pathlib import Path
+from typing import Optional, Self
+
 import pytest
 
 
 @pytest.fixture
-def sample_html():
-    """See `sample_md` for equivalent markdown."""
-
-    return """
-Sample text.
-<hr>
-
-<tt>file.py</tt>
-
-<p>blah blah blah here's an<br /><i>unordered</i> <b>list</b>
-<ul>
-    <li>I'm an item</li>
-    <li>I'm another item</li>
-</ul>
-text.</p>
-
-<em>ordered</em> <strong>list</strong>
-
-<ol>
-    <li>I'm the <s>first</s> item</li>
-    <li>I'm the second item</li>
-</ol>
-
-another <mark>unordered</mark> list
-<ul>
-    <li>I'm an item</li>
-    <li>I'm another item</li>
-</ul>
-
-x<sup>2</sup>
-H<sub>2</sub>O
-
-Here's a <q>quote</q>
-
-Here's a <blockquote>block quote,
-starts here
-
-over multiple lines</blockquote>
-    """
+def data_dir():
+    return Path(__file__).parent.joinpath("data")
 
 
-@pytest.fixture
-def sample_md():
-    """Equivalent markdown for `sample_html`."""
+class MockTag:
 
-    return """
-Sample text.
----
+    def __init__(
+        self,
+        tag_name: str,
+        attrs: Optional[dict] = None,
+        text: str = "",
+        children: Optional[list[Self]] = None,
+    ):
 
-`file.py`
+        self.string = text
 
-<p>blah blah blah here's an
+        self.name = tag_name
+        self.attrs = attrs if attrs is not None else {}
 
-*unordered* **list**
+        self._children = (
+            {child.name: child for child in children} if children is not None else {}
+        )
 
-- I'm an item
-- I'm another item
+    def __getitem__(self, key) -> str:
+        return self.attrs.get(key)
 
-text.</p>
+    def __getattr__(self, name) -> Self:
+        return self._children.get(name)
 
-*ordered* **list**
+    def __repr__(self) -> str:
+        # attrs = [f'{key}="{value}"' for key, value in self._attrs.items()]
+        attrs = []
+        for key, value_lst in self.attrs.items():
+            attrs += [f'{key}="{value}"' for value in value_lst]
 
+        if len(attrs) > 0:
+            attrs_str = " " + " ".join(attrs)
+        else:
+            attrs_str = ""
 
-1. I'm the ~~first~~ item
-1. I'm the second item
+        children = [str(child) for child in self._children.values()]
+        if len(children):
+            children_str = "\n" + "\n".join(children)
+        else:
+            children_str = ""
 
-
-another ==unordered== list
-
-- I'm an item
-- I'm another item
-
-
-x^2^
-H~2~O
-
-Here's a "quote"
-
-Here's a 
-> block quote,
-> starts here
-> 
-> over multiple lines
-    """  # noqa W291
+        return f"<{self.name}{attrs_str}>{self.string}{children_str}</{self.name}>"

@@ -1,0 +1,34 @@
+<div class="targetlang"><pre>
+$ python
+&gt;&gt;&gt; import example
+&gt;&gt;&gt; example.fact(4)
+24
+&gt;&gt;&gt;
+</pre></div>
+
+<div class="code">
+<pre>
+/* File: example.i */
+%module example
+
+%{
+#include "example.h"
+%}
+
+int fact(int n);
+</pre>
+</div>
+
+<div class="shell"><pre>
+$ swig -python example.i
+</pre></div>
+
+<div class="diagram">
+<pre>
+mod1.py
+pkg1/__init__.py
+pkg1/mod2.py
+pkg1/pkg2/__init__.py
+pkg1/pkg2/mod3.py
+</pre>
+</div>

@@ -1,0 +1,6 @@
+{
+    "targetlang": "```python\n$ python\n>>> import example\n>>> example.fact(4)\n24\n>>>\n```",
+    "code": "```swig\n/* File: example.i */\n%module example\n\n%{\n#include \"example.h\"\n%}\n\nint fact(int n);\n```",
+    "shell": "```shell\n$ swig -python example.i\n```",
+    "diagram": "```\nmod1.py\npkg1/__init__.py\npkg1/mod2.py\npkg1/pkg2/__init__.py\npkg1/pkg2/mod3.py\n```"
+}
