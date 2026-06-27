@@ -7,9 +7,8 @@ SRC_DIR = ROOT_DIR.joinpath("swig_doc")
 TEST_DIR = ROOT_DIR.joinpath("tests")
 COV_DIR = ROOT_DIR.joinpath("coverage_report")
 
-PYTHON_VERSIONS = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
-
+@nox.session()
 def tests(session):
     """Run test suite."""
 
@@ -24,6 +23,7 @@ def tests(session):
     )
 
 
+@nox.session()
 def lint(session):
     """Run flake8."""
 
