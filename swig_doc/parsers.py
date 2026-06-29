@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from dataclasses import dataclass
 from pathlib import Path
 import html
@@ -60,7 +58,6 @@ class HtmlPageParser:
         text = "".join(elements)
 
         text = re.sub(r"\n +", "\n", text)
-        text = re.sub(r'"\n(?P<char>\S)', r'"\g<char>', text)
         text = MarkdownFormatter.convert_text_format(text)
 
         # convert html entities into unicode
@@ -75,6 +72,10 @@ class HtmlPageParser:
         item = self._soup.body.contents[0]
 
         while item is not None:
+            if item.name == "div" and "sectiontoc" in item["class"]:
+                item = item.next_sibling
+                continue
+
             try:
                 s = self._md_formatter.convert_tag(item)
             except ParsingException:
@@ -170,12 +171,3 @@ class SwigDocParser:
         out_file.write_text(text)
 
 
-if __name__ == "__main__":
-
-    repo_root = Path(__file__).parents[1]
-
-    html_path = repo_root.joinpath("tmp_data", "Manual")
-    out_path = repo_root.joinpath("docs")
-
-    swig_doc_parser = SwigDocParser(html_path, out_path)
-    swig_doc_parser.write()

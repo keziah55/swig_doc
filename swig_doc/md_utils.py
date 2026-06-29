@@ -33,34 +33,39 @@ class MarkdownFormatter:
             tag_type = tag.name
 
         func = None
+        tag_type = tag_type.lower()
+        tidy_text = True
 
         if re.match(r"h\d+", tag_type) is not None:
             func = self.header
+        elif tag_type == "comment":
+            func = self.comment
+        elif tag_type == "div":
+            try:
+                func = self.code
+            except ParsingException:
+                func = self.tag
+            else:
+                tidy_text = False
+        elif tag_type == "p":
+            func = self.paragraph
+        elif tag_type == "a":
+            func = self.a
+        elif tag_type == "tag":
+            func = self.tag
+        elif tag_type == "navigablestring":
+            func = self.string
         else:
-            match tag_type.lower():
-                # case re.match(r"h\d+", tag_type):
-                #     func = self.header
-                case "comment":
-                    func = self.comment
-                case "code":
-                    func = self.code
-                case "p":
-                    func = self.paragraph
-                case "a":
-                    func = self.a
-                case "tag":
-                    func = self.tag
-                case "navigablestring":
-                    func = self.string
-                case _:
-                    raise ParsingException(f"No format function for '{tag_type}' tag")
+            raise ParsingException(f"No format function for '{tag_type}' tag")
 
         if func is None:
             return tag
         else:
             s = func(tag)
-            if s != "\n":
-                s = s.lstrip()
+            if tidy_text:
+                if s != "\n":
+                    s = s.lstrip()
+                    
             return s
 
     @staticmethod
@@ -101,16 +106,16 @@ class MarkdownFormatter:
         """
 
         regexes = [
-            (r"<tt>(?P<string>.+?)</tt>", r"`\g<string>`"),
-            (r"<em>(?P<string>.+?)</em>", r"*\g<string>*"),
-            (r"<i>(?P<string>.+?)</i>", r"*\g<string>*"),
-            (r"<b>(?P<string>.+?)</b>", r"**\g<string>**"),
-            (r"<strong>(?P<string>.+?)</strong>", r"**\g<string>**"),
-            (r"<s>(?P<string>.+?)</s>", r"~~\g<string>~~"),
-            (r"<sub>(?P<string>.+?)</sub>", r"~\g<string>~"),
-            (r"<sup>(?P<string>.+?)</sup>", r"^\g<string>^"),
-            (r"<mark>(?P<string>.+?)</mark>", r"==\g<string>=="),
-            (r"<q>(?P<string>.+?)</q>", r'"\g<string>"'),
+            (r"<tt>\s*(?P<string>.+?)</tt>", r"`\g<string>`"),
+            (r"<em>\s*(?P<string>.+?)</em>", r"*\g<string>*"),
+            (r"<i>\s*(?P<string>.+?)</i>", r"*\g<string>*"),
+            (r"<b>\s*(?P<string>.+?)</b>", r"**\g<string>**"),
+            (r"<strong>\s*(?P<string>.+?)</strong>", r"**\g<string>**"),
+            (r"<s>\s*(?P<string>.+?)</s>", r"~~\g<string>~~"),
+            (r"<sub>\s*(?P<string>.+?)</sub>", r"~\g<string>~"),
+            (r"<sup>\s*(?P<string>.+?)</sup>", r"^\g<string>^"),
+            (r"<mark>\s*(?P<string>.+?)</mark>", r"==\g<string>=="),
+            (r"<q>\s*(?P<string>.+?)</q>", r'"\g<string>"'),
             (r"<hr>", r"---"),
             (r"<br */>", r"\n\n"),
             (r"<wbr */>", r"\n\n"),
@@ -182,10 +187,9 @@ class MarkdownFormatter:
 
         return html
 
-
     @staticmethod
     def string(s: str) -> str:
-        """Return `s` with any leading whitespace removed, unless string is just 
+        """Return `s` with any leading whitespace removed, unless string is just
         newline char."""
 
         if s != "\n":
@@ -213,9 +217,9 @@ class MarkdownFormatter:
             url = tag["href"]
         except KeyError:
             anchor = tag["name"]
-            s= f'<a> name="{anchor}"</a>'
+            s = f'<a> name="{anchor}"</a>'
         else:
-            s= f"[{title}]({url})"
+            s = f"[{title}]({url})"
 
         s = re.sub(r"\n", " ", s)
 
@@ -260,7 +264,7 @@ class MarkdownFormatter:
             case "diagram":
                 language = ""
 
-        return template.substitute(language=language, content=content.strip())
+        return template.substitute(language=language, content=content)
 
     @classmethod
     def header(cls, tag: Tag) -> str:
@@ -291,13 +295,12 @@ class MarkdownFormatter:
     # @classmethod
     def paragraph(self, tag: Tag) -> str:
         """Make paragraph string."""
-        
+
         s = ""
         for content in tag:
             s += self.convert_tag(content)
 
-        # TODO parse:
-        # <a href="url">name</a> into [name](url)
-        # <tt>s</tt> into `s`
+        s = re.sub(r"\n +", "\n", s)
+        s = re.sub(r'"\n(?P<char>\S)', r'"\g<char>', s)
 
         return s

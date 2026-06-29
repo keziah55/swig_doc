@@ -15,3 +15,20 @@ parts of the extension module are defined in C and other parts are
 defined in Python.  The C layer contains low-level wrappers whereas Python code
 is used to define high-level features.
 
+### <a name="Python_nn4"></a> 33.2.1 Running SWIG
+
+Suppose that you defined a SWIG module such as the following:
+
+```swig
+
+/* File: example.i */
+%module example
+
+%{
+#include "example.h"
+%}
+
+int fact(int n);
+```
+
+This `.i` file wraps the following simple C file:
