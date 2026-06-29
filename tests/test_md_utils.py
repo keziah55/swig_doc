@@ -2,6 +2,7 @@ import json
 
 from bs4 import BeautifulSoup
 
+from swig_doc.parsers import HtmlPageParser
 from swig_doc.md_utils import MarkdownFormatter
 from swig_doc.exceptions import ParsingException
 
@@ -11,9 +12,11 @@ import pytest
 @pytest.mark.parametrize("code_type", ["targetlang", "code", "shell", "diagram"])
 def test_code_block(data_dir, code_type):
 
-    html = data_dir.joinpath("code_blocks.html").read_text()
+    fname = "code_blocks"
 
-    with open(data_dir.joinpath("code_blocks_md.json")) as fileobj:
+    html = data_dir.joinpath(f"{fname}.html").read_text()
+
+    with open(data_dir.joinpath(f"{fname}.json")) as fileobj:
         md = json.load(fileobj)
 
     soup = BeautifulSoup(html, "html.parser")
@@ -77,7 +80,24 @@ def test_header_error():
 
 def test_convert_text_format(data_dir):
 
-    html = data_dir.joinpath("convert_text_format.html").read_text()
-    expected = data_dir.joinpath("convert_text_format.md").read_text()
+    fname = "convert_text_format"
+    html = data_dir.joinpath(f"{fname}.html").read_text()
+    expected = data_dir.joinpath(f"{fname}.md").read_text()
 
     assert MarkdownFormatter.convert_text_format(html) == expected
+
+
+def test_html_page_parser(data_dir):
+
+    fname = "paragraphs"
+    html_file = data_dir.joinpath(f"{fname}.html")
+    expected = data_dir.joinpath(f"{fname}.md").read_text()
+
+    parser = HtmlPageParser(html_file, target_language="python")
+
+    md = parser.parse()
+
+    print()
+    print(md)
+
+    assert md == expected

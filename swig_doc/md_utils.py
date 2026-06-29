@@ -32,24 +32,36 @@ class MarkdownFormatter:
         if tag_type == "Tag":
             tag_type = tag.name
 
-        match type(tag).__name__:
-            case re.match(r"h\d+", tag_type):
-                func = self.header
-            case "comment":
-                func = self.comment
-            case "code":
-                func = self.code
-            case "p":
-                func = self.paragraph
-            case "navigablestring":
-                func = None
-            case _:
-                raise ParsingException(f"No format function for '{tag_type}' tag")
+        func = None
+
+        if re.match(r"h\d+", tag_type) is not None:
+            func = self.header
+        else:
+            match tag_type.lower():
+                # case re.match(r"h\d+", tag_type):
+                #     func = self.header
+                case "comment":
+                    func = self.comment
+                case "code":
+                    func = self.code
+                case "p":
+                    func = self.paragraph
+                case "a":
+                    func = self.a
+                case "tag":
+                    func = self.tag
+                case "navigablestring":
+                    func = self.string
+                case _:
+                    raise ParsingException(f"No format function for '{tag_type}' tag")
 
         if func is None:
             return tag
         else:
-            return func(tag)
+            s = func(tag)
+            if s != "\n":
+                s = s.lstrip()
+            return s
 
     @staticmethod
     def make_md_head(title: str, level: int, custom_id: Optional[str] = None) -> str:
@@ -63,7 +75,7 @@ class MarkdownFormatter:
         return f"{'#' * level} {title}{custom_id}"
 
     @classmethod
-    def convert_text_format(cls, html: str) -> str:
+    def convert_text_format(cls, s: str) -> str:
         """
         Convert any text formatting tags into markdown.
 
@@ -105,12 +117,12 @@ class MarkdownFormatter:
         ]
 
         for pattern, repl in regexes:
-            html = re.sub(pattern, repl, html, flags=re.DOTALL)
+            s = re.sub(pattern, repl, s, flags=re.DOTALL)
 
-        html = cls.convert_lists(html)
-        html = cls._convert_blockquote(html)
+        s = cls.convert_lists(s)
+        s = cls._convert_blockquote(s)
 
-        return html
+        return s
 
     @classmethod
     def convert_lists(cls, html: str) -> str:
@@ -170,8 +182,24 @@ class MarkdownFormatter:
 
         return html
 
+
     @staticmethod
-    def a(tag: Tag) -> str:
+    def string(s: str) -> str:
+        """Return `s` with any leading whitespace removed, unless string is just 
+        newline char."""
+
+        if s != "\n":
+            s = s.lstrip()
+        return s
+
+    @classmethod
+    def tag(cls, tag: Tag) -> str:
+        """Return `tag.string`."""
+        # TODO check if None?
+        return cls.string(tag.string)
+
+    @classmethod
+    def a(cls, tag: Tag) -> str:
         """
         Handle `a` tag.
 
@@ -179,15 +207,19 @@ class MarkdownFormatter:
         `href` (link) or `name` (`anchor`).
         """
 
-        title = tag.string
+        title = tag.string.strip()
 
         try:
             url = tag["href"]
         except KeyError:
             anchor = tag["name"]
-            return f'<a> name="{anchor}"</a>'
+            s= f'<a> name="{anchor}"</a>'
         else:
-            return f"[{title}]({url})"
+            s= f"[{title}]({url})"
+
+        s = re.sub(r"\n", " ", s)
+
+        return s
 
     def code(self, code_tag: Tag) -> str:
         """See `code_block`."""
@@ -235,12 +267,12 @@ class MarkdownFormatter:
         """Make markdown header string."""
 
         if tag.a is not None:
-            title = tag.a.string
+            title = tag.a.string.lstrip()
             attrs = tag.a.attrs
             anchor = " " + " ".join([f'{key}="{value}"' for key, value in attrs.items()])
             a = f"<a{anchor}></a> "
         else:
-            title = tag.string
+            title = tag.string.lstrip()
             a = ""
 
         if (m := re.match(r"h(?P<level>\d+)", tag.name)) is not None:
@@ -256,10 +288,13 @@ class MarkdownFormatter:
 
         return f"<!--{tag.string}-->"
 
-    @staticmethod
-    def paragraph(tag: Tag) -> str:
+    # @classmethod
+    def paragraph(self, tag: Tag) -> str:
         """Make paragraph string."""
-        s = tag.string
+        
+        s = ""
+        for content in tag:
+            s += self.convert_tag(content)
 
         # TODO parse:
         # <a href="url">name</a> into [name](url)

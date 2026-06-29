@@ -4,10 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path
 import html
 from typing import Optional
+import re
 
 from bs4 import BeautifulSoup
 
 from .md_utils import MARKDOWN_EXT, MarkdownFormatter
+from .exceptions import ParsingException
 
 
 @dataclass
@@ -54,14 +56,12 @@ class HtmlPageParser:
     def parse(self) -> str:
         """Parse html and generate string of markdown."""
 
-        # for tag in self._soup.find_all("h1"):
-        #     self._sections.append(PageSection(title=tag.string, level=1,
-        #     anchor=tag.a["name"]))
-
-        # text = "\n".join([section.make_md() for section in self._sections])
-
         elements = self._walk()
-        text = "\n".join(elements)
+        text = "".join(elements)
+
+        text = re.sub(r"\n +", "\n", text)
+        text = re.sub(r'"\n(?P<char>\S)', r'"\g<char>', text)
+        text = MarkdownFormatter.convert_text_format(text)
 
         # convert html entities into unicode
         text = html.unescape(text)
@@ -72,11 +72,31 @@ class HtmlPageParser:
 
         elements = []
 
-        for item in self._soup.body.descendants:
-            if item.name == "div" and "sectiontoc" in item["class"]:
-                continue
+        item = self._soup.body.contents[0]
+
+        while item is not None:
+            try:
+                s = self._md_formatter.convert_tag(item)
+            except ParsingException:
+                # print("####")
+                # print(item)
+                # print(err)
+                # print("####")
+                item = item.next_element
             else:
-                elements.append(self._md_formatter.convert_tag(item))
+                # print("----")
+                # print(item)
+                # print(s)
+                # print("----")
+
+                elements.append(s)
+                item = item.next_sibling
+
+        # for item in self._soup.body:
+        #     if item.name == "div" and "sectiontoc" in item["class"]:
+        #         continue
+        #     else:
+        #         elements.append(self._md_formatter.convert_tag(item))
 
         return elements
 
