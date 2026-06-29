@@ -65,7 +65,7 @@ class MarkdownFormatter:
             if tidy_text:
                 if s != "\n":
                     s = s.lstrip()
-                    
+
             return s
 
     @staticmethod

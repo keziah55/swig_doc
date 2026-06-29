@@ -169,5 +169,3 @@ class SwigDocParser:
         out_file = self._out_path.joinpath(f"{name}{MARKDOWN_EXT}")
 
         out_file.write_text(text)
-
-
