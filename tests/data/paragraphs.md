@@ -1,3 +1,4 @@
+<!-- this is a comment -->
 
 This chapter describes SWIG's support of Python.
 This chapter covers most SWIG features, but certain low-level details

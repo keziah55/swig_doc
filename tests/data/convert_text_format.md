@@ -1,6 +1,10 @@
 Sample text.
 ---
 
+### Header 3
+
+<!-- this is a comment -->
+
 `file.py`
 
 <p>blah blah blah here's an
@@ -24,6 +28,8 @@ another ==unordered== list
 - I'm an item
 - I'm another item
 
+- I'm a list item without an outer tag<
+- I'm another list item without an outer tag
 
 x^2^
 H~2~O

@@ -10,23 +10,23 @@ from .md_utils import MARKDOWN_EXT, MarkdownFormatter
 from .exceptions import ParsingException
 
 
-@dataclass
-class PageSection:
+# @dataclass
+# class PageSection:
 
-    title: str
-    level: int
-    anchor: str
+#     title: str
+#     level: int
+#     anchor: str
 
-    def make_md(self) -> str:
-        """Make all markdown for this section."""
+#     def make_md(self) -> str:
+#         """Make all markdown for this section."""
 
-        s = self.make_md_head()
+#         s = self.make_md_head()
 
-        return s
+#         return s
 
-    def make_md_head(self) -> str:
-        """Make markdown header string."""
-        return MarkdownFormatter.make_md_head(self.title, self.level)
+#     def make_md_head(self) -> str:
+#         """Make markdown header string."""
+#         return MarkdownFormatter.make_md_head(self.title, self.level)
 
 
 class HtmlPageParser:
@@ -57,8 +57,8 @@ class HtmlPageParser:
         elements = self._walk()
         text = "".join(elements)
 
-        text = re.sub(r"\n +", "\n", text)
-        text = MarkdownFormatter.convert_text_format(text)
+        # text = re.sub(r"\n +", "\n", text)
+        # text = MarkdownFormatter.convert_text_format(text)
 
         # convert html entities into unicode
         text = html.unescape(text)
@@ -78,7 +78,7 @@ class HtmlPageParser:
 
             try:
                 s = self._md_formatter.convert_tag(item)
-            except ParsingException:
+            except ParsingException as err:
                 # print("####")
                 # print(item)
                 # print(err)
@@ -91,7 +91,9 @@ class HtmlPageParser:
                 # print("----")
 
                 elements.append(s)
-                item = item.next_sibling
+                # item = item.next_sibling
+                item = item.next_element
+
 
         # for item in self._soup.body:
         #     if item.name == "div" and "sectiontoc" in item["class"]:

@@ -1,15 +1,15 @@
 from string import Template
 import re
-from typing import Optional, Literal
+from typing import Optional, Literal, Callable
 
-from bs4 import Tag
+from bs4 import Tag, NavigableString, Comment
 
 from .exceptions import ParsingException
 
 MARKDOWN_EXT = ".md"
 
 
-class MarkdownFormatter:
+class Formatters:
     """Collection of functions for converting
     [BeautifulSoup `Tag`](https://beautiful-soup-4.readthedocs.io/en/latest/#tag)
     to markdown strings.
@@ -18,58 +18,39 @@ class MarkdownFormatter:
 
     _templates = {"code": Template("```${language}\n${content}\n```")}
 
-    def __init__(self, target_language: Optional[str] = None):
+    @classmethod
+    def get(cls, name: str) -> Callable:
+        """Get function to handle `name` html tag."""
 
-        if target_language is None:
-            target_language = ""
-        self._target_language = target_language
+        if (m := re.match(r"(?P<tag>h)\d+", name)) is not None:
+            name = m.group("tag")
 
-    def convert_tag(self, tag: Tag) -> str:
-        """Convert `Tag` to markdown string."""
+        if (func := getattr(cls, name, None)) is None:
+            raise NameError(f"No formatter '{name}'")
+        return func
 
-        tag_type = type(tag).__name__
+    @classmethod
+    def h(cls, tag: Tag, **kwargs) -> str:
+        """Make markdown header string."""
 
-        if tag_type == "Tag":
-            tag_type = tag.name
-
-        func = None
-        tag_type = tag_type.lower()
-        tidy_text = True
-
-        if re.match(r"h\d+", tag_type) is not None:
-            func = self.header
-        elif tag_type == "comment":
-            func = self.comment
-        elif tag_type == "div":
-            try:
-                func = self.code
-            except ParsingException:
-                func = self.tag
-            else:
-                tidy_text = False
-        elif tag_type == "p":
-            func = self.paragraph
-        elif tag_type == "a":
-            func = self.a
-        elif tag_type == "tag":
-            func = self.tag
-        elif tag_type == "navigablestring":
-            func = self.string
+        if tag.a is not None:
+            title = tag.a.string.lstrip()
+            attrs = tag.a.attrs
+            anchor = " " + " ".join([f'{key}="{value}"' for key, value in attrs.items()])
+            a = f"<a{anchor}></a> "
         else:
-            raise ParsingException(f"No format function for '{tag_type}' tag")
+            title = tag.string.lstrip()
+            a = ""
 
-        if func is None:
-            return tag
+        if (m := re.match(r"h(?P<level>\d+)", tag.name)) is not None:
+            header_level = int(m.group("level"))
         else:
-            s = func(tag)
-            if tidy_text:
-                if s != "\n":
-                    s = s.lstrip()
+            raise ParsingException(f"Cannot get header level from '{tag.name}'")
 
-            return s
+        return cls._make_md_head(f"{a}{title}", header_level)
 
     @staticmethod
-    def make_md_head(title: str, level: int, custom_id: Optional[str] = None) -> str:
+    def _make_md_head(title: str, level: int, custom_id: Optional[str] = None) -> str:
         """Make markdown header string."""
 
         if custom_id is not None:
@@ -79,133 +60,10 @@ class MarkdownFormatter:
 
         return f"{'#' * level} {title}{custom_id}"
 
-    @classmethod
-    def convert_text_format(cls, s: str) -> str:
-        """
-        Convert any text formatting tags into markdown.
-
-        Handled tags are:
-
-        | Html                            | Markdown   |
-        |---------------------------------|------------|
-        | <tt>string</tt>                 | `string`   |
-        | <em>string</em>                 | *string*   |
-        | <i>string</i>                   | *string*   |
-        | <b>string</b>                   | **string** |
-        | <strong>string</strong>         | **string** |
-        | <s>string</s>                   | ~~string~~ |
-        | <sub>string</sub>               | ~string~   |
-        | <sup>string</sup>               | ^string^   |
-        | <mark>string</mark>             | ==string== |
-        | <q>string</q>                   | > string   |
-        | <blockquote>string</blockquote> | > string   |
-        | <ul><li>string</li></ul>        | - string   |
-        | <ol><li>string</li></ol>        | 1. string  |
-        | <hr>                            | ---        |
-
-        """
-
-        regexes = [
-            (r"<tt>\s*(?P<string>.+?)</tt>", r"`\g<string>`"),
-            (r"<em>\s*(?P<string>.+?)</em>", r"*\g<string>*"),
-            (r"<i>\s*(?P<string>.+?)</i>", r"*\g<string>*"),
-            (r"<b>\s*(?P<string>.+?)</b>", r"**\g<string>**"),
-            (r"<strong>\s*(?P<string>.+?)</strong>", r"**\g<string>**"),
-            (r"<s>\s*(?P<string>.+?)</s>", r"~~\g<string>~~"),
-            (r"<sub>\s*(?P<string>.+?)</sub>", r"~\g<string>~"),
-            (r"<sup>\s*(?P<string>.+?)</sup>", r"^\g<string>^"),
-            (r"<mark>\s*(?P<string>.+?)</mark>", r"==\g<string>=="),
-            (r"<q>\s*(?P<string>.+?)</q>", r'"\g<string>"'),
-            (r"<hr>", r"---"),
-            (r"<br */>", r"\n\n"),
-            (r"<wbr */>", r"\n\n"),
-        ]
-
-        for pattern, repl in regexes:
-            s = re.sub(pattern, repl, s, flags=re.DOTALL)
-
-        s = cls.convert_lists(s)
-        s = cls._convert_blockquote(s)
-
-        return s
-
-    @classmethod
-    def convert_lists(cls, html: str) -> str:
-        """Convert any ordered or unordered lists in `html` into markdown."""
-
-        for list_type in ["ul", "ol"]:
-            html = cls._convert_list(html, list_type)
-
-        return html
-
     @staticmethod
-    def _convert_list(html: str, list_type: Literal["ul", "ol"]) -> str:
-        """Convert ordered/unordered lists in `html` into markdown."""
-
-        match list_type:
-            case "ul":
-                s = r"-"
-            case "ol":
-                s = r"1."
-
-        regex = re.compile(
-            r"(?P<lst><" + list_type + r">(?P<lst_content>.+?)</" + list_type + r">)",
-            flags=re.DOTALL,
-        )
-
-        while (m := regex.search(html)) is not None:
-
-            list_content = m.group("lst_content")
-            list_content = re.sub(
-                r"(?P<space>[ \t]*)<li>(?P<item>.+?)</li>",
-                s + r" \g<item>",
-                list_content,
-                flags=re.DOTALL,
-            )
-
-            idx0, idx1 = m.span("lst")
-            html = html[:idx0] + list_content + html[idx1:]
-
-        return html
-
-    @staticmethod
-    def _convert_blockquote(html: str) -> str:
-        """Convert html blockquote(s) into markdown."""
-
-        regex = re.compile(
-            r"(?P<quote><blockquote>(?P<quote_content>.+?)</blockquote>)", flags=re.DOTALL
-        )
-
-        while (m := regex.search(html)) is not None:
-
-            quote_content = m.group("quote_content")
-            quote_content = re.sub(r"\n", r"\n> ", quote_content)
-            quote_content = "\n> " + quote_content
-
-            idx0, idx1 = m.span("quote")
-            html = html[:idx0] + quote_content + html[idx1:]
-
-        return html
-
-    @staticmethod
-    def string(s: str) -> str:
-        """Return `s` with any leading whitespace removed, unless string is just
-        newline char."""
-
-        if s != "\n":
-            s = s.lstrip()
-        return s
-
-    @classmethod
-    def tag(cls, tag: Tag) -> str:
-        """Return `tag.string`."""
-        # TODO check if None?
-        return cls.string(tag.string)
-
-    @classmethod
-    def a(cls, tag: Tag) -> str:
+    def a(tag: Tag, **kwargs) -> str:
         """
-        Handle `a` tag.
+        Handle `<a>` tag.
 
         `a` can either define a link or an anchor point. This is determined by the attributes;
         `href` (link) or `name` (`anchor`).
@@ -225,15 +83,10 @@ class MarkdownFormatter:
 
         return s
 
-    def code(self, code_tag: Tag) -> str:
-        """See `code_block`."""
-
-        return self.code_block(code_tag, target_language=self._target_language)
-
     @classmethod
-    def code_block(cls, tag: Tag, target_language: str) -> str:
+    def pre(cls, tag: Tag, target_language: str) -> str:
         """
-        Make md code block from `<code>` tag.
+        Make md code block from `<pre>` tag.
 
         The target language must be provided, but can be empty string.
         """
@@ -241,11 +94,12 @@ class MarkdownFormatter:
         template = cls._templates["code"]
 
         try:
-            content = tag.pre.string
+            content = tag.string
         except AttributeError as exc:
             raise ParsingException(f"Could not get content of 'pre' tag in:\n{tag}") from exc
 
-        language_lst = tag["class"]
+        # parent should be <div class="[language]">
+        language_lst = tag.parent["class"]
         if len(language_lst) == 0:
             raise ParsingException(f"No code language class in\n{tag}")
         elif len(language_lst) > 1:
@@ -266,41 +120,311 @@ class MarkdownFormatter:
 
         return template.substitute(language=language, content=content)
 
-    @classmethod
-    def header(cls, tag: Tag) -> str:
-        """Make markdown header string."""
-
-        if tag.a is not None:
-            title = tag.a.string.lstrip()
-            attrs = tag.a.attrs
-            anchor = " " + " ".join([f'{key}="{value}"' for key, value in attrs.items()])
-            a = f"<a{anchor}></a> "
-        else:
-            title = tag.string.lstrip()
-            a = ""
-
-        if (m := re.match(r"h(?P<level>\d+)", tag.name)) is not None:
-            header_level = int(m.group("level"))
-        else:
-            raise ParsingException(f"Cannot get header level from '{tag.name}'")
-
-        return cls.make_md_head(f"{a}{title}", header_level)
-
     @staticmethod
-    def comment(tag: Tag) -> str:
+    def comment(tag: Tag, **kwargs) -> str:
         """Make comment string."""
-
         return f"<!--{tag.string}-->"
 
+    @staticmethod
+    def navigablestring(tag: Tag, **kwargs) -> str:
+        """Return `tag.string`."""
+        return tag.string
+
+    @staticmethod
+    def tt(tag: Tag, **kwargs) -> str:
+        """Handle <tt> tag (backticks)."""
+        return f"`{tag.string}`"
+
+    @classmethod
+    def em(cls, tag: Tag, **kwargs) -> str:
+        """Handle <em> tag (italics)."""
+        return cls._italics(tag, **kwargs)
+
+    @classmethod
+    def i(cls, tag: Tag, **kwargs) -> str:
+        """Handle <i> tag (italics)."""
+        return cls._italics(tag, **kwargs)
+
+    @staticmethod
+    def _italics(tag: Tag, **kwargs) -> str:
+        """Wrap `tag` test in `*` char."""
+        return f"*{tag.string}*"
+
+    @classmethod
+    def strong(cls, tag: Tag, **kwargs) -> str:
+        """Handle <strong> tag (bold)."""
+        return cls._bold(tag, **kwargs)
+
+    @classmethod
+    def b(cls, tag: Tag, **kwargs) -> str:
+        """Handle <b> tag (bold)."""
+        return cls._bold(tag, **kwargs)
+
+    @staticmethod
+    def _bold(tag: Tag, **kwargs) -> str:
+        """Wrap `tag` test in `**` chars."""
+        return f"**{tag.string}**"
+
+    @staticmethod
+    def s(tag: Tag, **kwargs) -> str:
+        """Handle <s> tag (strikethrough)."""
+        return f"~~{tag.string}~~"
+
+    @staticmethod
+    def sub(tag: Tag, **kwargs) -> str:
+        """Handle <sub> tag (subscript)."""
+        return f"~{tag.string}~"
+
+    @staticmethod
+    def sup(tag: Tag, **kwargs) -> str:
+        """Handle <sup> tag (superscript)."""
+        return f"^{tag.string}^"
+
+    @staticmethod
+    def mark(tag: Tag, **kwargs) -> str:
+        """Handle <mark> tag (highlight)."""
+        return f"=={tag.string}=="
+
+    @staticmethod
+    def q(tag: Tag, **kwargs) -> str:
+        """Handle <q> tag (quote marks)."""
+        return f'"{tag.string}"'
+
+    @staticmethod
+    def hr(*args, **kwargs) -> str:
+        """Handle <hr> tag (horizontal line)."""
+        return r"---"
+
+    @staticmethod
+    def br(*args, **kwargs) -> str:
+        """Handle <br> tag (new line)."""
+        return r"\n\n"
+
+    @staticmethod
+    def blockquote(tag: Tag, **kwargs) -> str:
+        """Handle <blockquote> tag."""
+
+        quote_content = re.sub(r"\n", r"\n> ", tag.string)
+        quote_content = "\n> " + quote_content
+        return quote_content
+
+    @staticmethod
+    def li(tag: Tag, **kwargs) -> str:
+        """Handle <li> tag, in either ordered or unordered list."""
+
+        match tag.parent.name:
+            case "ol":
+                prefix = "1."
+            case _:
+                prefix = "-"
+
+        return f"{prefix} {tag.string}"
+
+
+class MarkdownFormatter:
+    """Collection of functions for converting
+    [BeautifulSoup `Tag`](https://beautiful-soup-4.readthedocs.io/en/latest/#tag)
+    to markdown strings.
+
+    """
+
+    def __init__(self, target_language: Optional[str] = None):
+
+        if target_language is None:
+            target_language = ""
+        self._target_language = target_language
+
+    def convert_tag(self, tag: Tag) -> str:
+        """Convert `Tag` to markdown string."""
+
+        name = type(tag).__name__.lower()
+        if name == "tag":
+            name = tag.name
+
+        try:
+            func = Formatters.get(name)
+        except NameError:
+            pass
+        else:
+            return func(tag, target_language=self._target_language)
+
+        raise ParsingException(f"No format function for '{type(tag).__name__}' tag")
+
+        # tag_type = type(tag).__name__
+
+        # if tag_type == "Tag":
+        #     tag_type = tag.name
+
+        # func = None
+        # tag_type = tag_type.lower()
+        # tidy_text = True
+
+        # if re.match(r"h\d+", tag_type) is not None:
+        #     func = self.header
+        # elif tag_type == "comment":
+        #     func = self.comment
+        # elif tag_type == "div":
+        #     try:
+        #         func = self.pre
+        #     except ParsingException:
+        #         func = self.tag
+        #     else:
+        #         tidy_text = False
+        # elif tag_type == "p":
+        #     func = self.p
+        # elif tag_type == "a":
+        #     func = self.a
+        # elif tag_type == "tag":
+        #     func = self.tag
+        # elif tag_type == "navigablestring":
+        #     func = self.string
+        # else:
+        #     raise ParsingException(f"No format function for '{tag_type}' tag")
+
+        # if func is None:
+        #     return tag
+        # else:
+        #     s = func(tag)
+        #     if tidy_text:
+        #         if s != "\n":
+        #             s = s.lstrip()
+
+        #     return s
+
     # @classmethod
-    def paragraph(self, tag: Tag) -> str:
-        """Make paragraph string."""
+    # def convert_text_format(cls, s: str) -> str:
+    #     """
+    #     Convert any text formatting tags into markdown.
 
-        s = ""
-        for content in tag:
-            s += self.convert_tag(content)
+    #     Handled tags are:
 
-        s = re.sub(r"\n +", "\n", s)
-        s = re.sub(r'"\n(?P<char>\S)', r'"\g<char>', s)
+    #     | Html                            | Markdown   |
+    #     |---------------------------------|------------|
+    #     | <tt>string</tt>                 | `string`   |
+    #     | <em>string</em>                 | *string*   |
+    #     | <i>string</i>                   | *string*   |
+    #     | <b>string</b>                   | **string** |
+    #     | <strong>string</strong>         | **string** |
+    #     | <s>string</s>                   | ~~string~~ |
+    #     | <sub>string</sub>               | ~string~   |
+    #     | <sup>string</sup>               | ^string^   |
+    #     | <mark>string</mark>             | ==string== |
+    #     | <q>string</q>                   | > string   |
+    #     | <blockquote>string</blockquote> | > string   |
+    #     | <ul><li>string</li></ul>        | - string   |
+    #     | <ol><li>string</li></ol>        | 1. string  |
+    #     | <hr>                            | ---        |
 
+    #     """
+
+    #     regexes = [
+    #         # (r"<tt>\s*(?P<string>.+?)</tt>", r"`\g<string>`"),
+    #         # (r"<em>\s*(?P<string>.+?)</em>", r"*\g<string>*"),
+    #         # (r"<i>\s*(?P<string>.+?)</i>", r"*\g<string>*"),
+    #         # (r"<b>\s*(?P<string>.+?)</b>", r"**\g<string>**"),
+    #         # (r"<strong>\s*(?P<string>.+?)</strong>", r"**\g<string>**"),
+    #         # (r"<s>\s*(?P<string>.+?)</s>", r"~~\g<string>~~"),
+    #         # (r"<sub>\s*(?P<string>.+?)</sub>", r"~\g<string>~"),
+    #         # (r"<sup>\s*(?P<string>.+?)</sup>", r"^\g<string>^"),
+    #         # (r"<mark>\s*(?P<string>.+?)</mark>", r"==\g<string>=="),
+    #         # (r"<q>\s*(?P<string>.+?)</q>", r'"\g<string>"'),
+    #     ]
+
+    #     for pattern, repl in regexes:
+    #         s = re.sub(pattern, repl, s, flags=re.DOTALL)
+
+    #     s = cls.convert_lists(s)
+    #     s = cls._convert_blockquote(s)
+
+    #     return s
+
+    # @classmethod
+    # def convert_lists(cls, html: str) -> str:
+    #     """Convert any ordered or unordered lists in `html` into markdown."""
+
+    #     for list_type in ["ul", "ol"]:
+    #         html = cls._convert_list(html, list_type)
+
+    #     return html
+
+    # @staticmethod
+    # def _convert_list(html: str, list_type: Literal["ul", "ol"]) -> str:
+    #     """Convert ordered/unordered lists in `html` into markdown."""
+
+    #     match list_type:
+    #         case "ul":
+    #             s = r"-"
+    #         case "ol":
+    #             s = r"1."
+
+    #     regex = re.compile(
+    #         r"(?P<lst><" + list_type + r">(?P<lst_content>.+?)</" + list_type + r">)",
+    #         flags=re.DOTALL,
+    #     )
+
+    #     while (m := regex.search(html)) is not None:
+
+    #         list_content = m.group("lst_content")
+    #         list_content = re.sub(
+    #             r"(?P<space>[ \t]*)<li>(?P<item>.+?)</li>",
+    #             s + r" \g<item>",
+    #             list_content,
+    #             flags=re.DOTALL,
+    #         )
+
+    #         idx0, idx1 = m.span("lst")
+    #         html = html[:idx0] + list_content + html[idx1:]
+
+    #     return html
+
+    # @staticmethod
+    # def _convert_blockquote(html: str) -> str:
+    #     """Convert html blockquote(s) into markdown."""
+
+    #     regex = re.compile(
+    #         r"(?P<quote><blockquote>(?P<quote_content>.+?)</blockquote>)", flags=re.DOTALL
+    #     )
+
+    #     while (m := regex.search(html)) is not None:
+
+    #         quote_content = m.group("quote_content")
+    #         quote_content = re.sub(r"\n", r"\n> ", quote_content)
+    #         quote_content = "\n> " + quote_content
+
+    #         idx0, idx1 = m.span("quote")
+    #         html = html[:idx0] + quote_content + html[idx1:]
+
+    #     return html
+
+    @staticmethod
+    def string(s: str) -> str:
+        """Return `s` with any leading whitespace removed, unless string is just
+        newline char."""
+
+        if s != "\n":
+            s = s.lstrip()
         return s
+
+    # @classmethod
+    # def tag(cls, tag: Tag) -> str:
+    #     """Return `tag.string`."""
+    #     # TODO check if None?
+    #     return cls.string(tag.string)
+
+    # def code(self, code_tag: Tag) -> str:
+    #     """See `code_block`."""
+
+    #     return self.pre(code_tag, target_language=self._target_language)
+
+    # # @classmethod
+    # def p(self, tag: Tag) -> str:
+    #     """Make paragraph string."""
+
+    #     s = ""
+    #     for content in tag:
+    #         s += self.convert_tag(content)
+
+    #     s = re.sub(r"\n +", "\n", s)
+    #     s = re.sub(r'"\n(?P<char>\S)', r'"\g<char>', s)
+
+    #     return s

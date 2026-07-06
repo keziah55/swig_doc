@@ -81,10 +81,19 @@ def test_header_error():
 def test_convert_text_format(data_dir):
 
     fname = "convert_text_format"
-    html = data_dir.joinpath(f"{fname}.html").read_text()
+    html_file = data_dir.joinpath(f"{fname}.html")
     expected = data_dir.joinpath(f"{fname}.md").read_text()
 
-    assert MarkdownFormatter.convert_text_format(html) == expected
+    parser = HtmlPageParser(html_file, target_language="python")
+    md = parser.parse()
+
+    print()
+    print(md)
+
+    assert md == expected
+
+
+    # assert MarkdownFormatter.convert_text_format(html) == expected
 
 
 def test_html_page_parser(data_dir):
