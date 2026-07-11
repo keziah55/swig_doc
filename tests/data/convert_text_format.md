@@ -7,14 +7,14 @@ Sample text.
 
 `file.py`
 
-<p>blah blah blah here's an
+blah blah blah here's an
 
 *unordered* **list**
 
 - I'm an item
 - I'm another item
 
-text.</p>
+text.
 
 *ordered* **list**
 
@@ -28,7 +28,7 @@ another ==unordered== list
 - I'm an item
 - I'm another item
 
-- I'm a list item without an outer tag<
+- I'm a list item without an outer tag
 - I'm another list item without an outer tag
 
 x^2^
