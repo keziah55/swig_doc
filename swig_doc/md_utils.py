@@ -170,7 +170,7 @@ class HtmlToMd:
     @staticmethod
     def hr(*args, **kwargs) -> str:
         """Handle <hr> tag (horizontal line)."""
-        return "---"
+        return "\n---\n\n"
 
     @staticmethod
     def br(*args, **kwargs) -> str:
