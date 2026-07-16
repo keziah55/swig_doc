@@ -7,6 +7,7 @@ from .exceptions import ParsingException
 
 MARKDOWN_EXT = ".md"
 
+HEADER_REGEX = re.compile(r"h(?P<level>\d+)")
 
 def make_md_head(title: str, level: int, custom_id: Optional[str] = None) -> str:
     """Make markdown header string."""
@@ -37,7 +38,7 @@ class HtmlToMd:
     def get(cls, name: str) -> Callable:
         """Get function to handle `name` html tag."""
 
-        if (m := re.match(r"h(?P<level>\d+)", name)) is not None:
+        if (m := HEADER_REGEX.match(name)) is not None:
             return partial(cls.h, int(m.group("level")))
 
         if (func := getattr(cls, name, None)) is None:
@@ -96,7 +97,7 @@ class HtmlToMd:
 
         match mode:
             case "start":
-                match parent.name:
+                match parent.tag:
                     case "ol":
                         return "1. "
                     case _:

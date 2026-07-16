@@ -22,10 +22,14 @@ class TagStack:
     def __init__(self):
         self._stack: list[TagStackItem] = []
 
-    def append(self, tag: str, attrs: dict):
+    def __len__(self):
+        return len(self._stack)
+
+    def append(self, item): # tag: str, attrs: dict):
         """Add item to stack."""
 
-        self._stack.append(TagStackItem(tag, attrs))
+        self._stack.append(item)
+        # self._stack.append(TagStackItem(tag, attrs))
 
     def pop(self) -> Optional[TagStackItem]:
         """
