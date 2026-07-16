@@ -2,7 +2,7 @@ from pathlib import Path
 
 from .html_parser import HtmlPageParser
 from .md_utils import MARKDOWN_EXT, make_md_head
-from .exceptions import ParsingException
+# from .exceptions import ParsingException
 
 
 class SwigDocParser:

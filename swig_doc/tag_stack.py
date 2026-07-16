@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
+
 @dataclass(frozen=True)
 class TagStackItem:
     """Immutable dataclass with open tag and attrs info for a `TagStack` item."""
@@ -25,7 +26,7 @@ class TagStack:
     def __len__(self):
         return len(self._stack)
 
-    def append(self, item): # tag: str, attrs: dict):
+    def append(self, item):  # tag: str, attrs: dict):
         """Add item to stack."""
 
         self._stack.append(item)

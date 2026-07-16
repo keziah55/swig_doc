@@ -3,11 +3,13 @@ from typing import Optional, Literal, Callable
 from functools import partial
 
 from .tag_stack import TagStackItem
-from .exceptions import ParsingException
+
+# from .exceptions import ParsingException
 
 MARKDOWN_EXT = ".md"
 
 HEADER_REGEX = re.compile(r"h(?P<level>\d+)")
+
 
 def make_md_head(title: str, level: int, custom_id: Optional[str] = None) -> str:
     """Make markdown header string."""
