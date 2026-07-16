@@ -1,9 +1,9 @@
-import json
+# import json
 
 from swig_doc.html_parser import HtmlPageParser
-from swig_doc.exceptions import ParsingException
+# from swig_doc.exceptions import ParsingException
 
-import pytest
+# import pytest
 
 
 def test_convert_text_format(data_dir):
