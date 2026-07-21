@@ -78,6 +78,8 @@ class HtmlToMd:
                 if parent is not None and (code_type := parent.attrs.get("class", "")):
                     if code_type == "targetlang":
                         code_type = cls._TARGET_LANGUAGE
+                    elif code_type == "code":
+                        code_type = "swig"
                     return f"```{code_type}\n"
 
             case "end":

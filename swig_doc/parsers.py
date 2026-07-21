@@ -1,7 +1,9 @@
 from pathlib import Path
+from typing import Optional
 
 from .html_parser import HtmlPageParser
 from .md_utils import MARKDOWN_EXT, make_md_head
+
 # from .exceptions import ParsingException
 
 
@@ -28,6 +30,33 @@ class SwigDocParser:
         self._out_path.mkdir(parents=True, exist_ok=True)
 
         self._chapters = self._get_chapters_list()
+
+        self._languages = [
+            "android",
+            "cplusplus11",
+            "cplusplus14",
+            "cplusplus17",
+            "cplusplus20",
+            "csharp",
+            "d",
+            "go",
+            "guile",
+            "java",
+            "javascript",
+            "lua",
+            "octave",
+            "perl5",
+            "php",
+            "python",
+            "r",
+            "ruby",
+            "scilab",
+            "tcl",
+            "c",
+            "ocaml",
+        ]
+
+        self._language_lookup = {"android": "java", "cplusplus": "c++", "csharp": "c#"}
 
     def write(self):
         """Write all files."""
@@ -66,9 +95,20 @@ class SwigDocParser:
             # for now
             return
 
-        parser = HtmlPageParser()
+        language = self._get_target_language(name)
+        print(f"name: {name}, target language: {language}")
+        parser = HtmlPageParser(target_language=language)
         text = parser.parse(html_file)
 
         out_file = self._out_path.joinpath(f"{name}{MARKDOWN_EXT}")
 
         out_file.write_text(text)
+
+    def _get_target_language(self, name: str) -> Optional[str]:
+        """Get target language for chapter."""
+
+        name = name.lower()
+        if name in self._languages:
+            return self._language_lookup.get(name, name)
+        else:
+            return None
