@@ -6,6 +6,7 @@ from .md_utils import MARKDOWN_EXT, make_md_head
 
 # from .exceptions import ParsingException
 
+# TODO: make zensical.toml nav from chapters
 
 class SwigDocParser:
     """
@@ -96,7 +97,6 @@ class SwigDocParser:
             return
 
         language = self._get_target_language(name)
-        print(f"name: {name}, target language: {language}")
         parser = HtmlPageParser(target_language=language)
         text = parser.parse(html_file)
 
