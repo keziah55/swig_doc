@@ -141,7 +141,6 @@ class HtmlPageParser(HTMLParser):
     def doc(self) -> str:
         """Return markdown document."""
 
-        # parts = [doc_item.to_str() for doc_item in self._doc_items]
         s = "".join(self._doc_parts)
 
         # s = re.sub(r"\n\n\n+", "\n\n", s)
@@ -174,10 +173,7 @@ class HtmlPageParser(HTMLParser):
 
     def _new_doc_item(self, tag, **kwargs) -> DocumentItem:
 
-        # if len(self._doc_items) > 0:
         parent = self._doc_items.current  # None if stack is empty
-        # else:
-        #     parent = None
 
         item = DocumentItem(tag=tag, doc_pos=self.getpos(), parent=parent, **kwargs)
         self._doc_items.append(item)
@@ -209,8 +205,6 @@ class HtmlPageParser(HTMLParser):
 
     def handle_endtag(self, tag: str):
         """Handle a tag closing."""
-
-        # print(f"END    {tag}")
 
         if not self._handle_tag(tag, mode="end"):
             return
@@ -250,8 +244,6 @@ class HtmlPageParser(HTMLParser):
 
         attrs = dict(attrs)
 
-        # print(f"ST/END {tag} {attrs}")
-
         item = self._new_doc_item(tag, attrs=attrs)
 
         if (func := HtmlToMd.get(tag)) is not None:
@@ -267,7 +259,6 @@ class HtmlPageParser(HTMLParser):
         if not self._active:
             return
 
-        # data = data.strip()
         if not data.strip():
             return
 
@@ -275,7 +266,6 @@ class HtmlPageParser(HTMLParser):
             item = self._doc_items.current
         else:
             item = self._new_doc_item(tag="string")
-            print(f"New item for '{data}'")
 
         if item.tag in self._data_tags:
             func = HtmlToMd.get(item.tag)
@@ -294,14 +284,3 @@ class HtmlPageParser(HTMLParser):
         item = self._new_doc_item("comment", data=[data])
         self._doc_items.pop()
         self._close_doc_item(item)
-
-
-if __name__ == "__main__":
-
-    html_file = Path(__file__).parents[1].joinpath("tests", "data", "convert_text_format.html")
-
-    parser = HtmlPageParser(target_language="python")
-    md = parser.parse(html_file)
-    print(md)
-    # parser.feed(html_file.read_text())
-    # print(parser.doc)
