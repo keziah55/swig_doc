@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import subprocess
 import shutil
+import sys
 
 from swig_doc import SwigDocParser
 
@@ -35,7 +36,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    
     if args.swig_path is None:
         swig_path = Path(tempfile.mkdtemp(prefix="swig_doc_"))
         clone_swig_repo(swig_path)
@@ -52,6 +52,7 @@ if __name__ == "__main__":
     html_path = swig_path.joinpath("Doc", "Manual")
     out_path = repo_root.joinpath("docs")
 
+    print(f"Running SWIG doc parser with Python {sys.version}")
     swig_doc_parser = SwigDocParser(html_path, out_path)
     swig_doc_parser.write()
 
