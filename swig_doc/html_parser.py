@@ -115,19 +115,21 @@ class DocumentItem:
 
 class HtmlPageParser(HTMLParser):
 
-    def __init__(self, target_language: Optional[str] = None):
+    def __init__(
+        self, target_language: Optional[str] = None, shell_language: Optional[str] = None
+    ):
         super().__init__()
 
-        self.reset(target_language)
+        self.reset(target_language, shell_language)
         self._data_tags = ["p", "blockquote"]
 
-    def reset(self, target_language: Optional[str] = None):
+    def reset(
+        self, target_language: Optional[str] = None, shell_language: Optional[str] = None
+    ):
         super().reset()
 
-        if target_language is None:
-            target_language = ""
-
         HtmlToMd.set_target_language(target_language)
+        HtmlToMd.set_shell_language(shell_language)
 
         # list of strings from completed DocumentItems
         self._doc_parts: list[str] = []

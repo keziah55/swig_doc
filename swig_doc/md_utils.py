@@ -32,9 +32,24 @@ class HtmlToMd:
     _TARGET_LANGUAGE = ""
     """Target programming language to use for code blocks."""
 
+    _SHELL_LANGUAGE = "shell"
+    """Target shell language for code blocks."""
+
     @classmethod
-    def set_target_language(cls, target_language: str):
+    def set_target_language(cls, target_language: Optional[str]):
+        """Set language to use for 'targetlang' code blocks."""
+
+        if target_language is None:
+            target_language = ""
         cls._TARGET_LANGUAGE = target_language
+
+    @classmethod
+    def set_shell_language(cls, shell_language: Optional[str]):
+        """Set language to use fo 'shell' code blocks."""
+
+        if shell_language is None:
+            shell_language = "shell"
+        cls._SHELL_LANGUAGE = shell_language
 
     @classmethod
     def get(cls, name: str) -> Callable:
@@ -71,19 +86,37 @@ class HtmlToMd:
 
     @classmethod
     def pre(cls, mode: Literal["start", "end"], parent: Optional[TagStackItem] = None) -> str:
-        """Handle code block, using `parent` to get language."""
+        """
+        Handle code block, using `parent` to get language.
+
+        If `pre` has `div` as parent, use triple back-quote block. Otherwise, use single
+        backquote.
+        """
+
+        # defaults
+        symbol = "`"
+        code_type = ""
+        new_line = ""
+
+        if parent is not None and parent.tag == "div":
+            symbol = "```"
+            code_type = parent.attrs.get("class", "")
+            new_line = "\n"
+
+            match code_type:
+                case "targetlang":
+                    code_type = cls._TARGET_LANGUAGE
+                case "shell":
+                    code_type = cls._SHELL_LANGUAGE
+                case "code":
+                    code_type = "swig"
 
         match mode:
             case "start":
-                if parent is not None and (code_type := parent.attrs.get("class", "")):
-                    if code_type == "targetlang":
-                        code_type = cls._TARGET_LANGUAGE
-                    elif code_type == "code":
-                        code_type = "swig"
-                    return f"```{code_type}\n"
+                return f"{symbol}{code_type}{new_line}"
 
             case "end":
-                return "\n```"
+                return f"{new_line}{symbol}"
 
     @staticmethod
     def title(mode: Literal["start", "end"], **kwargs) -> str:
