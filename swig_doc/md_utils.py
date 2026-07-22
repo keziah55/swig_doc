@@ -91,9 +91,9 @@ class HtmlToMd:
 
         match mode:
             case "start":
-                return "% "
+                return ""
             case "end":
-                return "\n"
+                return "\n===="
 
     @staticmethod
     def li(mode: Literal["start", "end"], parent: Optional[TagStackItem] = None) -> str:
