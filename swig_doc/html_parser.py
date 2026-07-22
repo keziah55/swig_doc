@@ -22,11 +22,10 @@ class DocumentItem:
     """Class representing document item, either a block item or inline item."""
 
     tag: str
-    doc_pos: tuple[int,int]
+    doc_pos: tuple[int, int]
     data: list[str] = field(default_factory=list)
     attrs: Optional[dict] = None
     parent: Optional[Self] = None
-    
 
     _block_tags = ["p", "div", "ul", "ol", "blockquote"]  # also headers
 
@@ -223,11 +222,11 @@ class HtmlPageParser(HTMLParser):
                     f"End tag '{tag}' encountered at {self.getpos()}, but no tags are open"
                 )
                 break
-            
+
             warnings.warn(
                 f"End tag '{tag}' encountered at {self.getpos()}, but unclosed {item} remains"
             )
-            
+
             # close previous doc item
             self._close_doc_item(item)
 
@@ -242,7 +241,6 @@ class HtmlPageParser(HTMLParser):
             item.append_data(s)
 
         self._close_doc_item(item)
-        
 
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str]]):
         """Handle a self-closing tag."""

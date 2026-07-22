@@ -8,6 +8,7 @@ from .md_utils import MARKDOWN_EXT, make_md_head
 
 # TODO: make zensical.toml nav from chapters
 
+
 class SwigDocParser:
     """
     Parse directory of SWIG Manual pages and create markdown equivalents.
@@ -66,7 +67,7 @@ class SwigDocParser:
 
         for name in self._chapters:
             # if name != "Python":
-                # continue
+            # continue
             self._write_file(name)
 
     def _get_chapters_list(self) -> list[str]:
