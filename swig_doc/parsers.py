@@ -65,6 +65,8 @@ class SwigDocParser:
         self._write_index()
 
         for name in self._chapters:
+            # if name != "Python":
+                # continue
             self._write_file(name)
 
     def _get_chapters_list(self) -> list[str]:
@@ -96,6 +98,8 @@ class SwigDocParser:
             # for now
             return
 
+        print()
+        print(name)
         language = self._get_target_language(name)
         parser = HtmlPageParser(target_language=language)
         text = parser.parse(html_file)
