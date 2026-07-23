@@ -7,14 +7,7 @@ import re
 
 from .md_utils import HtmlToMd, HEADER_REGEX
 from .tag_stack import TagStack
-
-# PLAN
-# Make DocumentItems for every start tag
-# If there is an existing DocItem, it is set as the new DocItem's parent
-# When tag ends, do DocItem.to_str()
-#   If DocItem has a parent, this string is appended to its data
-#   If no parent, string is appended to parser's list
-# DocItems are either blocks (p, div, h, ul, ol) or inline (everything else)
+from .exceptions import EndTagWarning
 
 
 @dataclass
@@ -34,7 +27,7 @@ class DocumentItem:
     def __repr__(self) -> str:
 
         s = f"'{self.tag}' at pos {self.doc_pos}"
-        if self.attrs is not None:
+        if self.attrs:
             s += ": "
             s += " ".join([f'{k}="{v}"' for k, v in self.attrs.items()])
 
@@ -80,6 +73,8 @@ class DocumentItem:
         if self.tag in ["li"]:
             # s = s.lstrip()
             s = s.rstrip()
+        if self.tag in ["p"]:
+            s = s.strip()
 
         # if re.match(r"h\d+", self.tag):
         #     s = re.sub(r"\n", "", s)
@@ -245,12 +240,14 @@ class HtmlPageParser(HTMLParser):
         while item is not None and item.tag != tag:
             if item is None:
                 warnings.warn(
-                    f"End tag '{tag}' encountered at {self.getpos()}, but no tags are open"
+                    f"End tag '{tag}' encountered at {self.getpos()}, but no tags are open",
+                    EndTagWarning
                 )
                 break
 
             warnings.warn(
-                f"End tag '{tag}' encountered at {self.getpos()}, but unclosed {item} remains"
+                f"End tag '{tag}' encountered at {self.getpos()}, but unclosed {item} remains",
+                EndTagWarning
             )
 
             # close previous doc item
@@ -288,13 +285,15 @@ class HtmlPageParser(HTMLParser):
     def handle_data(self, data: str):
         """Handle data within or outwith a tag."""
 
+        ci = self._doc_items.current.tag if self._doc_items.current is not None else None
+
         if not self._quiet:
-            print(f"DATA:  {repr(data)}")
+            print(f"DATA:  {repr(data)}; current item: {ci}")
 
         if not self._active:
             return
 
-        if not data.strip():
+        if not data.strip() and ci != "p":
             return
 
         if len(self._doc_items) > 0:
