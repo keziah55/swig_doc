@@ -27,6 +27,8 @@ class DocumentItem:
     attrs: Optional[dict] = None
     parent: Optional[Self] = None
 
+    _quiet: bool = True
+
     _block_tags = ["p", "div", "ul", "ol", "blockquote"]  # also headers
 
     def __repr__(self) -> str:
@@ -52,7 +54,12 @@ class DocumentItem:
 
         False if it represents an inline item.
         """
-        return self.tag in self._block_tags or (HEADER_REGEX.match(self.tag) is not None)
+        return self.tag in self._block_tags or self.is_header
+
+    @property
+    def is_header(self) -> bool:
+        """Return True if this DocumentItem represents a header tag."""
+        return  HEADER_REGEX.match(self.tag) is not None
 
     def to_str(self) -> str:
         """Return markdown string of this `DocumentItem`."""
@@ -65,10 +72,14 @@ class DocumentItem:
 
         # join_str = "\n" if self.tag in ["ol", "ul"] else ""
 
-        # if self.tag in ["ol", "ul"]:
-        #     print(self.data)
+        if not self._quiet and self.tag in ["ol", "ul"]:
+            print(f"{self.tag}: {self.data}")
 
         s = "".join(self.data)
+
+        if self.tag in ["li"]:
+            # s = s.lstrip()
+            s = s.rstrip()
 
         # if re.match(r"h\d+", self.tag):
         #     s = re.sub(r"\n", "", s)
@@ -107,6 +118,9 @@ class DocumentItem:
     def append_data(self, data: Optional[str]):
         """Add more `data` to this item."""
 
+        if len(self.data) == 1 and self.tag in ["li"]: # ["ul", "ol"]:
+            data = data.lstrip()
+
         if data is None or data == "":
             return
 
@@ -116,10 +130,14 @@ class DocumentItem:
 class HtmlPageParser(HTMLParser):
 
     def __init__(
-        self, target_language: Optional[str] = None, shell_language: Optional[str] = None
+        self,
+        target_language: Optional[str] = None,
+        shell_language: Optional[str] = None,
+        quiet: bool = True,
     ):
         super().__init__()
 
+        self._quiet = quiet
         self.reset(target_language, shell_language)
         self._data_tags = ["p", "blockquote"]
 
@@ -145,7 +163,7 @@ class HtmlPageParser(HTMLParser):
 
         s = "".join(self._doc_parts)
 
-        # s = re.sub(r"\n\n\n+", "\n\n", s)
+        s = re.sub(r"\n\n\n+", "\n\n", s)
 
         return s
 
@@ -177,7 +195,9 @@ class HtmlPageParser(HTMLParser):
 
         parent = self._doc_items.current  # None if stack is empty
 
-        item = DocumentItem(tag=tag, doc_pos=self.getpos(), parent=parent, **kwargs)
+        item = DocumentItem(
+            tag=tag, doc_pos=self.getpos(), parent=parent, _quiet=self._quiet, **kwargs
+        )
         self._doc_items.append(item)
 
         return item
@@ -196,8 +216,15 @@ class HtmlPageParser(HTMLParser):
 
         attrs = dict(attrs)
 
+        if not self._quiet:
+            print(f"START: {tag} {attrs}")
+
         if not self._handle_tag(tag, attrs=attrs, mode="start"):
             return
+
+        if tag == "li" and self._doc_items.current.tag == "li":
+            # <li> might not be closed, so end tag manually here
+            self.handle_endtag("li")
 
         item = self._new_doc_item(tag, attrs=attrs)
 
@@ -207,6 +234,9 @@ class HtmlPageParser(HTMLParser):
 
     def handle_endtag(self, tag: str):
         """Handle a tag closing."""
+
+        if not self._quiet:
+            print(f"END:  {tag}")
 
         if not self._handle_tag(tag, mode="end"):
             return
@@ -257,6 +287,9 @@ class HtmlPageParser(HTMLParser):
 
     def handle_data(self, data: str):
         """Handle data within or outwith a tag."""
+
+        if not self._quiet:
+            print(f"DATA:  {repr(data)}")
 
         if not self._active:
             return

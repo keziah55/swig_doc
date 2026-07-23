@@ -32,4 +32,6 @@ Suppose that you defined a SWIG module such as the following:
 int fact(int n);
 ```
 
-This `.i` file wraps the following simple C file:
+This
+`.i`
+file wraps the following simple C file:

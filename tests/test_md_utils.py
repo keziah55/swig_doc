@@ -29,7 +29,7 @@ def test_html_page_parser(data_dir):
     html_file = data_dir.joinpath(f"{fname}.html")
     expected = data_dir.joinpath(f"{fname}.md").read_text()
 
-    parser = HtmlPageParser(target_language="python")
+    parser = HtmlPageParser(target_language="python", quiet=False)
 
     md = parser.parse(html_file)
 
@@ -37,3 +37,59 @@ def test_html_page_parser(data_dir):
     print(md)
 
     assert md == expected
+
+
+def test_parse_list():
+    html = """
+<ul>
+        <li>Download the swigwin zip package from the <a href="https://www.swig.org">SWIG website</a> and unzip into a directory. This is all that needs downloading for the Windows platform.
+        <li>Set environment variables as described in the <a href="#Windows_examples">SWIG Windows Examples</a> section in order to run examples using Visual C++.
+</ul>
+"""
+
+    expected_md = """
+- Download the swigwin zip package from the [SWIG website](https://www.swig.org) and unzip into a directory. This is all that needs downloading for the Windows platform.
+- Set environment variables as described in the [SWIG Windows Examples](#Windows_examples) section in order to run examples using Visual C++.
+
+"""
+
+    print()
+    parser = HtmlPageParser()
+    parser.feed(html)
+    md = parser.doc
+
+    assert md == expected_md
+
+
+def test_parse_list_indented():
+
+    html = """
+<ol>
+    <li>
+        Install Nuget from <a href="https://www.nuget.org/downloads">https://www.nuget.org/downloads</a> (v6.0.0 is used in this example, and installed to <tt>C:\Tools</tt>). Nuget is the package manager
+        for .NET, but allows us to easily install <a href="https://cmake.org/">CMake</a> and other dependencies required by SWIG.
+    </li>
+    <li>
+        Install <a href="https://www.nuget.org/packages/CMake-win64/">CMake-win64 Nuget package</a> using the following command: <pre>C:\Tools\nuget install CMake-win64 -Version 3.15.5 -OutputDirectory C:\Tools\CMake</pre>
+        Using PowerShell the equivalent syntax is: <pre>&amp; "C:\Tools\nuget" install CMake-win64 -Version 3.15.5 -OutputDirectory C:\Tools\CMake</pre>
+        Alternatively you can download CMake from <a href="https://cmake.org/download/">https://cmake.org/download/</a> or install a copy through your Visual Studio installer.
+    </li>
+    <li>
+    <p>
+        Now we have all the required dependencies we can build SWIG using PowerShell and the commands below. We are assuming Visual Studio 2019 or higher is installed and we will be building a 64-bit version of SWIG.
+        For documentation on specific Visual Studio generators see the associated
+        <a href="https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html#visual-studio-generators">Visual Studio Generators</a> documentation.
+        We add the required build tools to the system <tt>PATH</tt> and then
+        build a Release version of SWIG. If all runs successfully a new
+        <tt>swig.exe</tt> should be generated in <tt>C:/swig/install2/bin</tt>.
+    </p>
+    </li>
+</ol>
+"""
+
+    print()
+    parser = HtmlPageParser(quiet=False)
+    parser.feed(html)
+    md = parser.doc
+
+    print(md)
