@@ -1,11 +1,14 @@
 
 Sample text.
+
 ---
 
 ### Header 3
 
 <!-- this is a comment -->
-`file.py` hello
+`file.py`
+
+hello
 
 blah blah blah here's an
 
@@ -18,10 +21,8 @@ text.
 
 *ordered* **list**
 
-
 1. I'm the ~~first~~ item
 1. I'm the second item
-
 
 another ==unordered== list
 
@@ -37,6 +38,7 @@ H~2~O
 Here's a "quote"
 
 Here's a 
+
 > block quote,
 > starts here
 > 

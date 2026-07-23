@@ -2,11 +2,8 @@ from pathlib import Path
 from typing import Optional
 
 from .html_parser import HtmlPageParser
-from .md_utils import MARKDOWN_EXT, make_md_head
-
-# from .exceptions import ParsingException
-
-# TODO: make zensical.toml nav from chapters
+from .md_utils import make_md_head
+from .utils import MARKDOWN_EXT
 
 
 class SwigDocParser:
@@ -102,7 +99,8 @@ class SwigDocParser:
         print()
         print(name)
         language = self._get_target_language(name)
-        parser = HtmlPageParser(target_language=language)
+        shell_language = self._get_shell_language(name)
+        parser = HtmlPageParser(target_language=language, shell_language=shell_language)
         text = parser.parse(html_file)
 
         out_file = self._out_path.joinpath(f"{name}{MARKDOWN_EXT}")
@@ -117,3 +115,12 @@ class SwigDocParser:
             return self._language_lookup.get(name, name)
         else:
             return None
+
+    def _get_shell_language(self, name: str) -> Optional[str]:
+
+        name = name.lower()
+        if name == "windows":
+            # TODO do we actually want/need this? Many of the shell code blocks on the windows
+            # page are for mingw/cygwin
+            return "powershell"
+        return None
