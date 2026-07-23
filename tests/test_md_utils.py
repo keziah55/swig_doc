@@ -34,13 +34,13 @@ def test_parse_list():
         <li>Download the swigwin zip package from the <a href="https://www.swig.org">SWIG website</a> and unzip into a directory. This is all that needs downloading for the Windows platform.
         <li>Set environment variables as described in the <a href="#Windows_examples">SWIG Windows Examples</a> section in order to run examples using Visual C++.
 </ul>
-"""
+"""  # noqa E501
 
     expected_md = """
 - Download the swigwin zip package from the [SWIG website](https://www.swig.org) and unzip into a directory. This is all that needs downloading for the Windows platform.
 - Set environment variables as described in the [SWIG Windows Examples](#Windows_examples) section in order to run examples using Visual C++.
 
-"""
+"""  # noqa E501
 
     parser = HtmlPageParser()
 
@@ -81,7 +81,7 @@ def test_parse_list_indented():
     </p>
     </li>
 </ol>
-"""
+"""  # noqa E501
 
     expected_md = """
 1. Install Nuget from [https://www.nuget.org/downloads](https://www.nuget.org/downloads) (v6.0.0 is used in this example, and installed to `C:\\Tools`). Nuget is the package manager
@@ -96,7 +96,7 @@ We add the required build tools to the system `PATH` and then
 build a Release version of SWIG. If all runs successfully a new
 `swig.exe` should be generated in `C:/swig/install2/bin`.
 
-"""
+"""  # noqa E501
 
     parser = HtmlPageParser()
     parser.feed(html)
