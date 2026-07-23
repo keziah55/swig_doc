@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, Self
 import re
-from .md_utils import HEADER_REGEX
+from .utils import HEADER_REGEX
 
 
 @dataclass

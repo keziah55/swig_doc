@@ -2,13 +2,8 @@ import re
 from typing import Optional, Literal, Callable
 from functools import partial
 
-from .tag_stack import TagStackItem
-
-# from .exceptions import ParsingException
-
-MARKDOWN_EXT = ".md"
-
-HEADER_REGEX = re.compile(r"h(?P<level>\d+)")
+from .doc_item import DocumentItem
+from .utils import HEADER_REGEX
 
 
 def make_md_head(title: str, level: int, custom_id: Optional[str] = None) -> str:
@@ -85,7 +80,7 @@ class HtmlToMd:
                 return re.sub(r"\n +", "\n", data)
 
     @classmethod
-    def pre(cls, mode: Literal["start", "end"], parent: Optional[TagStackItem] = None) -> str:
+    def pre(cls, mode: Literal["start", "end"], parent: Optional[DocumentItem] = None) -> str:
         """
         Handle code block, using `parent` to get language.
 
@@ -129,7 +124,7 @@ class HtmlToMd:
                 return "\n===="
 
     @staticmethod
-    def li(mode: Literal["start", "end"], parent: Optional[TagStackItem] = None) -> str:
+    def li(mode: Literal["start", "end"], parent: Optional[DocumentItem] = None) -> str:
         """Handle list item tag."""
 
         match mode:

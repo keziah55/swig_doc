@@ -2,11 +2,8 @@ from pathlib import Path
 from typing import Optional
 
 from .html_parser import HtmlPageParser
-from .md_utils import MARKDOWN_EXT, make_md_head
-
-# from .exceptions import ParsingException
-
-# TODO: make zensical.toml nav from chapters
+from .md_utils import make_md_head
+from .utils import MARKDOWN_EXT
 
 
 class SwigDocParser:
