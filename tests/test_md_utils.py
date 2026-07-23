@@ -98,16 +98,8 @@ build a Release version of SWIG. If all runs successfully a new
 
 """
 
-    print()
-    parser = HtmlPageParser(quiet=False)
+    parser = HtmlPageParser()
     parser.feed(html)
     md = parser.doc
-
-    print()
-    print(repr(md))
-
-    print()
-    print(repr(expected_md))
-
 
     assert md == expected_md

@@ -31,13 +31,6 @@ class DocumentItem:
             s += ": "
             s += " ".join([f'{k}="{v}"' for k, v in self.attrs.items()])
 
-        # if self.data:
-        #     data = "".join(self.data)
-        #     data = f"{repr(data)}"
-        # else:
-        #     data = ""
-        # s += f"{data}"
-
         return s
 
     @property
@@ -52,7 +45,7 @@ class DocumentItem:
     @property
     def is_header(self) -> bool:
         """Return True if this DocumentItem represents a header tag."""
-        return  HEADER_REGEX.match(self.tag) is not None
+        return HEADER_REGEX.match(self.tag) is not None
 
     def to_str(self) -> str:
         """Return markdown string of this `DocumentItem`."""
@@ -62,8 +55,6 @@ class DocumentItem:
 
         if self.data is None:
             return ""
-
-        # join_str = "\n" if self.tag in ["ol", "ul"] else ""
 
         if not self._quiet and self.tag in ["ol", "ul"]:
             print(f"{self.tag}: {self.data}")
@@ -113,7 +104,7 @@ class DocumentItem:
     def append_data(self, data: Optional[str]):
         """Add more `data` to this item."""
 
-        if len(self.data) == 1 and self.tag in ["li"]: # ["ul", "ol"]:
+        if len(self.data) == 1 and self.tag in ["li"]:  # ["ul", "ol"]:
             data = data.lstrip()
 
         if data is None or data == "":
@@ -241,13 +232,13 @@ class HtmlPageParser(HTMLParser):
             if item is None:
                 warnings.warn(
                     f"End tag '{tag}' encountered at {self.getpos()}, but no tags are open",
-                    EndTagWarning
+                    EndTagWarning,
                 )
                 break
 
             warnings.warn(
                 f"End tag '{tag}' encountered at {self.getpos()}, but unclosed {item} remains",
-                EndTagWarning
+                EndTagWarning,
             )
 
             # close previous doc item
