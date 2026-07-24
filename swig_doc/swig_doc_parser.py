@@ -57,6 +57,9 @@ class SwigDocParser:
 
         self._language_lookup = {"android": "java", "cplusplus": "c++", "csharp": "c#"}
 
+        # non-language chapters, where we want to use python the target lang for code blocks
+        self._python_chapters = ["arguments", "varargs"]
+
     def write(self):
         """Write all files."""
 
@@ -124,6 +127,8 @@ class SwigDocParser:
         name = name.lower()
         if name in self._languages:
             return self._language_lookup.get(name, name)
+        elif name in self._python_chapters:
+            return "python"
         else:
             return None
 
