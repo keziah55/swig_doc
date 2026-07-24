@@ -32,7 +32,7 @@ def transform_internal_link(href: str) -> str:
         # the "s" is optional
         href = m.group("page_name")
         if m.group("anchor"):
-            href += m.group("anchor")
+            href += f"/{m.group("anchor")}"
 
     return href
 
