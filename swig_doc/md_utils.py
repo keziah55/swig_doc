@@ -116,7 +116,7 @@ class HtmlToMd:
         if parent is not None and parent.tag == "div":
             symbol = "```"
             code_types = parent.attrs.get("class", "").split(" ")
-            new_line = "\n" 
+            new_line = "\n"
 
             if "targetlang" in code_types:
                 code_type = cls._TARGET_LANGUAGE
