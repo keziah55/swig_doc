@@ -6,7 +6,7 @@ import re
 
 
 from .doc_item import DocumentItem, DocItemStack
-from .md_utils import HtmlToMd
+from .md_utils import HtmlToMd, transform_internal_link
 from .exceptions import EndTagWarning
 
 
@@ -101,6 +101,9 @@ class HtmlPageParser(HTMLParser):
 
         if not self._quiet:
             print(f"START: {tag} {attrs}")
+
+        if tag == "a" and "href" in attrs:
+            attrs["href"] = transform_internal_link(attrs["href"])
 
         if not self._handle_tag(tag, attrs=attrs, mode="start"):
             return

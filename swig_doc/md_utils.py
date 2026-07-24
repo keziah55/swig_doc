@@ -17,6 +17,26 @@ def make_md_head(title: str, level: int, custom_id: Optional[str] = None) -> str
     return f"{'#' * level} {title}{custom_id}"
 
 
+def transform_internal_link(href: str) -> str:
+    """
+    Internal links point to `[page_name].html`.
+
+    Return with the `.html` removed, retaining any anchor.
+    """
+
+    if (
+        m := re.match(r"(?P<page_name>\w+)\.html(?P<anchor>\#\w+)?", href)
+    ) is not None and re.match(r"https?://", href) is None:
+        # NOTE can't use negative lookbehind instead of the second `re.match` there because
+        # that requires fixed-length sequence and we want to match against a pattern where
+        # the "s" is optional
+        href = m.group("page_name")
+        if m.group("anchor"):
+            href += m.group("anchor")
+
+    return href
+
+
 class HtmlToMd:
     """
     Class or static/classmethods to return markdown elements for html tags.

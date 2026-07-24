@@ -3,7 +3,7 @@ from typing import Optional
 
 from .html_parser import HtmlPageParser
 from .md_utils import make_md_head
-from .utils import MARKDOWN_EXT
+from .utils import MARKDOWN_EXT, REDIRECT_TEMPLATE
 
 
 class SwigDocParser:
@@ -66,6 +66,7 @@ class SwigDocParser:
             # if name != "Python":
             # continue
             self._write_file(name)
+            self._write_redirect_page(name)
 
     def _get_chapters_list(self) -> list[str]:
 
@@ -106,6 +107,16 @@ class SwigDocParser:
         out_file = self._out_path.joinpath(f"{name}{MARKDOWN_EXT}")
 
         out_file.write_text(text)
+
+    def _write_redirect_page(self, name: str):
+        """Write `[name].html` page that redirects to `base_url/name`."""
+
+        url = f"{name}/"
+
+        html = REDIRECT_TEMPLATE.substitute(url=url)
+
+        out_file = self._out_path.joinpath(f"{name}.html")
+        out_file.write_text(html)
 
     def _get_target_language(self, name: str) -> Optional[str]:
         """Get target language for chapter."""
