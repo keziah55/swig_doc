@@ -115,16 +115,15 @@ class HtmlToMd:
 
         if parent is not None and parent.tag == "div":
             symbol = "```"
-            code_type = parent.attrs.get("class", "")
-            new_line = "\n"
+            code_types = parent.attrs.get("class", "").split(" ")
+            new_line = "\n" 
 
-            match code_type:
-                case "targetlang":
-                    code_type = cls._TARGET_LANGUAGE
-                case "shell":
-                    code_type = cls._SHELL_LANGUAGE
-                case "code":
-                    code_type = "swig"
+            if "targetlang" in code_types:
+                code_type = cls._TARGET_LANGUAGE
+            elif "shell" in code_types:
+                code_type = cls._SHELL_LANGUAGE
+            elif "code" in code_types:
+                code_type = "swig"
 
         match mode:
             case "start":

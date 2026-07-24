@@ -58,12 +58,8 @@ class DocumentItem:
         if self.tag in ["li"]:
             # s = s.lstrip()
             s = s.rstrip()
-        if self.tag in ["p"]:
+        elif self.tag in ["p"]:
             s = s.strip()
-
-        # if re.match(r"h\d+", self.tag):
-        #     s = re.sub(r"\n", "", s)
-        # s = f"\n{s}\n"
 
         if self.is_block:
             ret = f"\n{s}\n"
@@ -98,7 +94,7 @@ class DocumentItem:
     def append_data(self, data: Optional[str]):
         """Add more `data` to this item."""
 
-        if len(self.data) == 1 and self.tag in ["li"]:  # ["ul", "ol"]:
+        if len(self.data) == 1 and self.tag in ["li"]:
             data = data.lstrip()
 
         if data is None or data == "":

@@ -103,3 +103,25 @@ build a Release version of SWIG. If all runs successfully a new
     md = parser.doc
 
     assert md == expected_md
+
+
+def test_pre_multiple_class():
+
+    html = """
+<div class="code shell">
+<pre>$ swig -ruby example.i
+</pre>
+</div>
+"""
+
+    expected_md = """
+```shell
+$ swig -ruby example.i
+
+```
+"""
+
+    parser = HtmlPageParser()
+    parser.feed(html)
+
+    assert parser.doc == expected_md
