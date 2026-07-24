@@ -8,7 +8,7 @@ import pytest
     [
         # urls that should be transformed
         ("SWIG.html", "SWIG"),
-        ("Python.html#Python_nn8", "Python#Python_nn8"),
+        ("Python.html#Python_nn8", "Python/#Python_nn8"),
         # urls that should not be transformed
         ("#Python_nn8", "#Python_nn8"),
         ("www.google.com", None),

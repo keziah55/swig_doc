@@ -3,7 +3,7 @@
 This chapter describes SWIG's support of Python.
 This chapter covers most SWIG features, but certain low-level details
 are covered in less depth than in earlier chapters.  At the
-very least, make sure you read the "[SWIG Basics](SWIG#SWIG)" chapter.
+very least, make sure you read the "[SWIG Basics](SWIG/#SWIG)" chapter.
 
 ## <a name="Python_nn2"></a>      33.1 Overview    
 
