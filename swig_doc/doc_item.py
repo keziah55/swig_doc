@@ -68,7 +68,7 @@ class DocumentItem:
         elif self.tag == "tr":
 
             if (table := self.search_parents("table")) is not None:
-                if len(table.data) == 0:
+                if table.data == ["\n"]:
                     # this is end of first table row, need to add header underline
                     # count number of '|' in this row (not including any escaped '|')
                     num_cols = len(re.findall(r"(?<!\\)\|", s)) - 1

@@ -140,7 +140,8 @@ $ swig -ruby example.i
 <!-- add more uses here (remember to adjust header) -->
 </TABLE>
 """,
-            """| **usage** | **transform** | 
+            """
+| **usage** | **transform** | 
 |---|---|
 | "skip" tag | (none) | 
 | Examples/ subdir name | (none) | 
@@ -148,7 +149,7 @@ $ swig -ruby example.i
 <!-- add more uses here (remember to adjust header) -->
 
 **Table:** nickname table
-""", # noqa W291
+""",  # noqa W291
         ),
         (
             """
@@ -175,7 +176,8 @@ $ swig -ruby example.i
   </tbody>
 </table>
 """,
-            """| **a** | **b** | **c** | **d** | 
+            """
+| **a** | **b** | **c** | **d** | 
 |---|---|---|---|
 | data | hello | escape \\| \\| char | world | 
 | aa | bb | cc | dd | 
@@ -213,6 +215,7 @@ def test_javadoc_table():
 """
 
     expected_md = """
+
 | Doxygen tags |  | 
 |---|---|
 | \\a | wrapped with <i\\> html tag | 
