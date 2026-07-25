@@ -125,3 +125,104 @@ $ swig -ruby example.i
     parser.feed(html)
 
     assert parser.doc == expected_md
+
+
+@pytest.mark.parametrize(
+    "html, expected_md",
+    [
+        (
+            """
+<TABLE summary="nickname table">
+<TR><TD><B>usage</B></TD><TD><B>transform</B></TD></TR>
+<TR><TD>"skip" tag</TD><TD>(none)</TD></TR>
+<TR><TD>Examples/ subdir name</TD><TD>(none)</TD></TR>
+<TR><TD>Examples/test-suite/ subdir name</TD><TD>(none)</TD></TR>
+<!-- add more uses here (remember to adjust header) -->
+</TABLE>
+""",
+            """| **usage** | **transform** | 
+|---|---|
+| "skip" tag | (none) | 
+| Examples/ subdir name | (none) | 
+| Examples/test-suite/ subdir name | (none) | 
+<!-- add more uses here (remember to adjust header) -->
+
+**Table:** nickname table
+""", # noqa W291
+        ),
+        (
+            """
+<table class="tg"><thead>
+  <tr>
+    <th class="tg-0pky"><span style="font-weight:bold">**a**</span></th>
+    <th class="tg-0pky"><span style="font-weight:bold">**b**</span></th>
+    <th class="tg-0pky"><span style="font-weight:bold">**c**</span></th>
+    <th class="tg-0pky"><span style="font-weight:bold">**d**</span></th>
+  </tr></thead>
+<tbody>
+  <tr>
+    <td class="tg-0pky">data</td>
+    <td class="tg-0pky">hello</td>
+    <td class="tg-0pky">escape \\| \\| char</td>
+    <td class="tg-0pky">world</td>
+  </tr>
+  <tr>
+    <td class="tg-0pky">aa</td>
+    <td class="tg-0pky">bb</td>
+    <td class="tg-0pky">cc</td>
+    <td class="tg-0pky">dd</td>
+  </tr>
+  </tbody>
+</table>
+""",
+            """| **a** | **b** | **c** | **d** | 
+|---|---|---|---|
+| data | hello | escape \\| \\| char | world | 
+| aa | bb | cc | dd | 
+""",  # noqa W291
+        ),
+    ],
+)
+def test_table(html, expected_md):
+
+    parser = HtmlPageParser()
+    parser.feed(html)
+
+    assert parser.doc == expected_md
+
+
+def test_javadoc_table():
+
+    html = """
+<div class="diagram">
+<table border="0" summary="Java Doxygen tags">
+<tr>
+  <th align="left">Doxygen tags</th>
+  <th></th>
+</tr>
+<tr>
+<td>\\a</td>
+<td>wrapped with &lt;i&gt; html tag</td>
+</tr>
+<tr>
+<td>\\arg</td>
+<td>wrapped with &lt;li&gt; html tag</td>
+</tr>
+</table>
+</div>
+"""
+
+    expected_md = """
+| Doxygen tags |  | 
+|---|---|
+| \\a | wrapped with <i\\> html tag | 
+| \\arg | wrapped with <li\\> html tag | 
+
+**Table:** Java Doxygen tags
+
+"""  # noqa W291
+
+    parser = HtmlPageParser()
+    parser.feed(html)
+
+    assert parser.doc == expected_md

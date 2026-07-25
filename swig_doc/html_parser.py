@@ -18,7 +18,19 @@ class HtmlPageParser(HTMLParser):
         shell_language: Optional[str] = None,
         quiet: bool = True,
     ):
-        super().__init__()
+        super().__init__(convert_charrefs=False)
+
+        self._entity_refs = {
+            "lt": "<",
+            "gt": ">",
+            "amp": "&",
+            "nbsp": " ",
+            "quot": '"',
+            "ndash": "-",
+            "hellip": "...",
+            "uarr": chr(8593),
+            "darr": chr(8595),
+        }
 
         self._quiet = quiet
         self.reset(target_language, shell_language)
@@ -209,3 +221,22 @@ class HtmlPageParser(HTMLParser):
         item = self._new_doc_item("comment", data=[data])
         self._doc_items.pop()
         self._close_doc_item(item)
+
+    def handle_entityref(self, name):
+        """Handle `&[name];` entities (as we are using `convert_charrefs=False`)."""
+
+        char = self._entity_refs.get(name, None)
+
+        if char is not None:
+            if len(self._doc_items) > 0:
+                item = self._doc_items.current
+            else:
+                item = self._new_doc_item(tag="string")
+
+            if char == ">":
+                # check if we're in the "Java Doxygen tags" table
+                if (table := item.search_parents("table")) is not None:
+                    if table.attrs.get("summary", "") == "Java Doxygen tags":
+                        char = f"\\{char}"
+
+            item.append_data(char)

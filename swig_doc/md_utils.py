@@ -241,3 +241,30 @@ class HtmlToMd:
                 return ""
             case "data":
                 return re.sub(r"\n", s, data)
+
+    # @staticmethod
+    # def table(mode: Literal["start", "end", "data"],**kwargs) -> str:
+    #     return ""
+
+    @staticmethod
+    def tr(mode: Literal["start", "end"], **kwargs) -> str:
+        match mode:
+            case "start":
+                return "| "
+            case "end":
+                return "\n"
+
+    @classmethod
+    def td(cls, mode: Literal["start", "end"], **kwargs) -> str:
+        return cls._td(mode, **kwargs)
+
+    @classmethod
+    def th(cls, mode: Literal["start", "end"], **kwargs) -> str:
+        return cls._td(mode, **kwargs)
+
+    @staticmethod
+    def _td(mode: Literal["start", "end"], **kwargs) -> str:
+        if mode == "end":
+            return " | "
+        else:
+            return ""

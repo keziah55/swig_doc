@@ -60,6 +60,20 @@ class DocumentItem:
             s = s.rstrip()
         elif self.tag in ["p"]:
             s = s.strip()
+        elif self.tag == "table":
+            if (
+                caption := self.attrs.get("caption", self.attrs.get("summary", None))
+            ) is not None:
+                s += f"\n**Table:** {caption}\n"
+        elif self.tag == "tr":
+
+            if (table := self.search_parents("table")) is not None:
+                if len(table.data) == 0:
+                    # this is end of first table row, need to add header underline
+                    # count number of '|' in this row (not including any escaped '|')
+                    num_cols = len(re.findall(r"(?<!\\)\|", s)) - 1
+                    underline = "|".join(["---"] * num_cols)
+                    s += f"|{underline}|\n"
 
         if self.is_block:
             ret = f"\n{s}\n"
@@ -69,6 +83,19 @@ class DocumentItem:
             ret = s
 
         return ret
+
+    def search_parents(self, tag: str) -> Optional[Self]:
+        """Search for `tag` in parents."""
+
+        parent = self.parent
+
+        while parent is not None:
+            if parent.tag == tag:
+                break
+            else:
+                parent = parent.parent
+
+        return parent
 
     def _link_to_str(self) -> str:
         """Return markdown string representation of link/anchor."""
