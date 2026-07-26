@@ -150,7 +150,7 @@ def test_table():
 <!-- add more uses here (remember to adjust header) -->
 
 **Table:** nickname table
-"""
+"""  # noqa W291
 
     parser = HtmlPageParser()
     parser.feed(html)
@@ -191,7 +191,7 @@ def test_table_with_th():
 | data | hello | escape \\| \\| char | world | 
 | aa | bb | cc | dd | 
 
-"""
+"""  # noqa W291
 
     parser = HtmlPageParser()
     parser.feed(html)
