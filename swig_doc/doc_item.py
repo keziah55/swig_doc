@@ -61,19 +61,14 @@ class DocumentItem:
         elif self.tag in ["p"]:
             s = s.strip()
         elif self.tag == "table":
+
+            # ensure all columns are the same length and add underline
+            s = self._format_table(s)
+
             if (
                 caption := self.attrs.get("caption", self.attrs.get("summary", None))
             ) is not None:
                 s += f"\n**Table:** {caption}\n"
-        elif self.tag == "tr":
-
-            if (table := self.search_parents("table")) is not None:
-                if table.data == ["\n"]:
-                    # this is end of first table row, need to add header underline
-                    # count number of '|' in this row (not including any escaped '|')
-                    num_cols = len(re.findall(r"(?<!\\)\|", s)) - 1
-                    underline = "|".join(["---"] * num_cols)
-                    s += f"|{underline}|\n"
 
         if self.is_block:
             ret = f"\n{s}\n"
@@ -96,6 +91,50 @@ class DocumentItem:
                 parent = parent.parent
 
         return parent
+
+    @staticmethod
+    def _count_pipe(s: str) -> int:
+        """Return number of '|' in this `s` (not including any escaped '|')."""
+
+        return len(re.findall(r"(?<!\\)\|", s))
+
+    def _get_table_columns(self, data_str: str) -> tuple[list[str], list[int]]:
+        """
+        Get number of columns in each row.
+
+        Note that this may include `-1` for empty rows.
+        """
+
+        # rows = [f"{row}|" for row in re.split(r"\| *\n", data_str) if row]
+        rows = data_str.split("\n")
+        return rows, [self._count_pipe(row) - 1 for row in rows]
+
+    def _format_table(self, data_str: str) -> str:
+        """Ensure all table columns have the correct width and add header underline."""
+
+        rows, num_cols = self._get_table_columns(data_str)
+
+        max_cols = max(num_cols)
+
+        if len(set([num for num in num_cols if num > 0])) > 1:
+            # only need to set fixed width if there are shorter rows
+            for n, row in enumerate(rows):
+                row_len = self._count_pipe(row) - 1
+                if num_cols[n] < 0 or row_len == max_cols:
+                    continue
+
+                rows[n] += " |" * (max_cols - row_len)
+
+        header_idx = None
+        for n, row in enumerate(rows):
+            if len(row.strip()) > 1:
+                header_idx = n + 1
+                break
+
+        underline = "|".join(["---"] * max_cols)
+        rows = rows[:header_idx] + [f"|{underline}|"] + rows[header_idx:]
+
+        return "\n".join(rows) + "\n"
 
     def _link_to_str(self) -> str:
         """Return markdown string representation of link/anchor."""
@@ -123,6 +162,8 @@ class DocumentItem:
 
         if len(self.data) == 1 and self.tag in ["li"]:
             data = data.lstrip()
+        elif self.tag in ["td", "th"]:
+            data = re.sub(r"\n+", " ", data)
 
         if data is None or data == "":
             return

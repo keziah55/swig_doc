@@ -160,7 +160,7 @@ class HtmlToMd:
     def _list(mode: Literal["start", "end"], **kwargs) -> str:
         match mode:
             case "start":
-                return ""
+                return "\n"
             case "end":
                 return "\n"
 

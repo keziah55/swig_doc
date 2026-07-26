@@ -37,6 +37,7 @@ def test_parse_list():
 """  # noqa E501
 
     expected_md = """
+
 - Download the swigwin zip package from the [SWIG website](https://www.swig.org) and unzip into a directory. This is all that needs downloading for the Windows platform.
 - Set environment variables as described in the [SWIG Windows Examples](#Windows_examples) section in order to run examples using Visual C++.
 
@@ -84,6 +85,7 @@ def test_parse_list_indented():
 """  # noqa E501
 
     expected_md = """
+
 1. Install Nuget from [https://www.nuget.org/downloads](https://www.nuget.org/downloads) (v6.0.0 is used in this example, and installed to `C:\\Tools`). Nuget is the package manager
         for .NET, but allows us to easily install [CMake](https://cmake.org/) and other dependencies required by SWIG.
 1. Install [CMake-win64 Nuget package](https://www.nuget.org/packages/CMake-win64/) using the following command: `C:\\Tools\\nuget install CMake-win64 -Version 3.15.5 -OutputDirectory C:\\Tools\\CMake`
@@ -127,11 +129,9 @@ $ swig -ruby example.i
     assert parser.doc == expected_md
 
 
-@pytest.mark.parametrize(
-    "html, expected_md",
-    [
-        (
-            """
+def test_table():
+
+    html = """
 <TABLE summary="nickname table">
 <TR><TD><B>usage</B></TD><TD><B>transform</B></TD></TR>
 <TR><TD>"skip" tag</TD><TD>(none)</TD></TR>
@@ -139,8 +139,9 @@ $ swig -ruby example.i
 <TR><TD>Examples/test-suite/ subdir name</TD><TD>(none)</TD></TR>
 <!-- add more uses here (remember to adjust header) -->
 </TABLE>
-""",
-            """
+"""
+
+    expected_md = """
 | **usage** | **transform** | 
 |---|---|
 | "skip" tag | (none) | 
@@ -149,10 +150,17 @@ $ swig -ruby example.i
 <!-- add more uses here (remember to adjust header) -->
 
 **Table:** nickname table
-""",  # noqa W291
-        ),
-        (
-            """
+"""
+
+    parser = HtmlPageParser()
+    parser.feed(html)
+
+    assert parser.doc == expected_md
+
+
+def test_table_with_th():
+
+    html = """
 <table class="tg"><thead>
   <tr>
     <th class="tg-0pky"><span style="font-weight:bold">**a**</span></th>
@@ -175,17 +183,15 @@ $ swig -ruby example.i
   </tr>
   </tbody>
 </table>
-""",
-            """
+"""
+
+    expected_md = """
 | **a** | **b** | **c** | **d** | 
 |---|---|---|---|
 | data | hello | escape \\| \\| char | world | 
 | aa | bb | cc | dd | 
-""",  # noqa W291
-        ),
-    ],
-)
-def test_table(html, expected_md):
+
+"""
 
     parser = HtmlPageParser()
     parser.feed(html)
@@ -200,11 +206,12 @@ def test_javadoc_table():
 <table border="0" summary="Java Doxygen tags">
 <tr>
   <th align="left">Doxygen tags</th>
-  <th></th>
 </tr>
 <tr>
 <td>\\a</td>
 <td>wrapped with &lt;i&gt; html tag</td>
+<td>here's another
+column</td>
 </tr>
 <tr>
 <td>\\arg</td>
@@ -216,10 +223,10 @@ def test_javadoc_table():
 
     expected_md = """
 
-| Doxygen tags |  | 
-|---|---|
-| \\a | wrapped with <i\\> html tag | 
-| \\arg | wrapped with <li\\> html tag | 
+| Doxygen tags |  | |
+|---|---|---|
+| \\a | wrapped with <i\\> html tag | here's another column | 
+| \\arg | wrapped with <li\\> html tag |  |
 
 **Table:** Java Doxygen tags
 

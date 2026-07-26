@@ -8,7 +8,7 @@ very least, make sure you read the "[SWIG Basics](SWIG/#SWIG)" chapter.
 ## <a name="Python_nn2"></a>      33.1 Overview    
 
 SWIG is compatible
-with all recent Python versions (Python 2.7 and Python >= 3.5).
+with all recent Python versions (Python 2.7 and Python \>= 3.5).
 SWIG-4.0 supported Python 3.2.  SWIG-3.0 supported older Python 2.x and 3.x.
 
 To build Python extension modules, SWIG uses a layered approach in which
