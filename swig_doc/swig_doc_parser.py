@@ -66,8 +66,8 @@ class SwigDocParser:
         self._write_index()
 
         for name in self._chapters:
-            # if name != "Python":
-            # continue
+            # if name != "Doxygen":
+                # continue
             self._write_file(name)
             self._write_redirect_page(name)
 

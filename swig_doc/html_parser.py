@@ -225,6 +225,9 @@ class HtmlPageParser(HTMLParser):
     def handle_entityref(self, name):
         """Handle `&[name];` entities (as we are using `convert_charrefs=False`)."""
 
+        if not self._active:
+            return
+
         char = self._entity_refs.get(name, None)
 
         if char is not None:
@@ -235,7 +238,6 @@ class HtmlPageParser(HTMLParser):
 
             if char == ">":
                 char = f"\\{char}"
-
                 # # check if we're in the "Java/Python Doxygen tags" table
                 # if (table := item.search_parents("table")) is not None:
                 #     if table.attrs.get("summary", "") in [
