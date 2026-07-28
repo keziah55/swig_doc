@@ -328,11 +328,7 @@ PYTHON_LIB: C:\\miniconda3\\envs\\python\\libs\\python313.lib
 ```
 """
 
-    print()
     parser = HtmlPageParser(quiet=False)
     parser.feed(html)
-
-    
-    print(parser.doc)
 
     assert parser.doc == expected_md
