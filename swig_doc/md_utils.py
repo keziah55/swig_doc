@@ -181,6 +181,10 @@ class HtmlToMd:
         return "`"
 
     @staticmethod
+    def code(*args, **kwargs) -> str:
+        return "`"
+
+    @staticmethod
     def em(*args, **kwargs) -> str:
         return "*"
 

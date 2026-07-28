@@ -71,7 +71,7 @@ class SwigDocParser:
         validation: dict[str : dict[int, set]] = {}
 
         for name in self._chapters:
-            # if name != "Extending":
+            # if name != "Scilab":
             #     continue
             md = self._make_markdown(name)
             self._write_file(name, md)
@@ -178,13 +178,13 @@ class SwigDocParser:
 
         for header_level in range(1, 7):
             html_headers = [
-                (tag.string, tag.a["name"]) for tag in soup.find_all(f"h{header_level}")
+                (tag.text, tag.a["name"]) for tag in soup.find_all(f"h{header_level}")
             ]
 
             md_head = f"#{{{header_level}}}"
             md_headers = [
-                # un-escape any `>` chars in header string
-                (m.group("h_str").replace("\\>", ">"), m.group("a_name"))
+                # un-escape any `>` chars in header string and remove any backticks
+                (m.group("h_str").replace("\\>", ">").replace("`", ""), m.group("a_name"))
                 for m in re.finditer(
                     r"\n" + md_head + r' <a name="(?P<a_name>\w+)"></a> +(?P<h_str>.+)', md
                 )
