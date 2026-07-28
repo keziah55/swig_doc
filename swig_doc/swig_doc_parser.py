@@ -124,6 +124,7 @@ class SwigDocParser:
         shell_language = self._get_shell_language(name)
         parser = HtmlPageParser(target_language=language, shell_language=shell_language)
         text = parser.parse(html_file)
+        parser.close()
 
         return text
 

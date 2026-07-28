@@ -45,6 +45,12 @@ class HtmlPageParser(HTMLParser):
     def reset(
         self, target_language: Optional[str] = None, shell_language: Optional[str] = None
     ):
+        """
+        Reset all internal objects.
+
+        Also call `super().reset()`.
+        """
+
         super().reset()
 
         HtmlToMd.set_target_language(target_language)
@@ -57,6 +63,18 @@ class HtmlPageParser(HTMLParser):
         self._doc_items = DocItemStack()
 
         self._active = True
+
+    def close(self):
+        """
+        Close any remaining items.
+
+        Also call `super().close()`.
+        """
+
+        if len(self._doc_items) > 0:
+            self._close_doc_items(None)
+
+        super().close()
 
     @property
     def doc(self) -> str:
@@ -112,6 +130,40 @@ class HtmlPageParser(HTMLParser):
         else:
             self._doc_parts.append(item_str)
 
+    def _close_doc_items(self, stop_tag: Optional[str]) -> Optional[DocumentItem]:
+        """
+        Close any open doc items until a tag matching `stop_tag` is found.
+
+        If `stop_tag` is None, close all open doc items.
+
+        Return the last item or None.
+        """
+
+        item = self._doc_items.pop()
+
+        while item is not None:
+            if stop_tag is not None and item.tag == stop_tag:
+                break
+
+            if stop_tag is not None:
+                prefix = f"End tag '{stop_tag}' encountered at {self.getpos()}; "
+            else:
+                prefix = ""
+
+            if item is None:
+                warnings.warn(f"{prefix}no tags are open", EndTagWarning)
+                break
+
+            warnings.warn(f"{prefix}force close {item}", EndTagWarning)
+
+            # close previous doc item
+            self._close_doc_item(item)
+
+            # pop next doc item
+            item = self._doc_items.pop()
+
+        return item
+
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str]]):
         """Handle a tag opening."""
 
@@ -157,27 +209,7 @@ class HtmlPageParser(HTMLParser):
         if not self._handle_tag(tag, mode="end"):
             return
 
-        item = self._doc_items.pop()
-
-        while item is not None and item.tag != tag:
-            if item is None:
-                warnings.warn(
-                    f"End tag '{tag}' encountered at {self.getpos()}, but no tags are open",
-                    EndTagWarning,
-                )
-                break
-
-            warnings.warn(
-                f"End tag '{tag}' encountered at {self.getpos()}, but unclosed {item} remains",
-                EndTagWarning,
-            )
-
-            # close previous doc item
-            self._close_doc_item(item)
-
-            # pop next doc item
-            item = self._doc_items.pop()
-
+        item = self._close_doc_items(tag)
         if item is None:
             return
 

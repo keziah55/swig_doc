@@ -48,8 +48,7 @@ def test_parse_list():
     with pytest.warns(
         EndTagWarning,
         match=(
-            r"End tag 'ul' encountered at \(\d, \d\), but unclosed 'li' at pos "
-            r"\(\d, \d\) remains"
+            r"End tag 'ul' encountered at \(\d, \d\); force close 'li' at pos " r"\(\d, \d\)"
         ),
     ):
         parser.feed(html)
@@ -330,5 +329,28 @@ PYTHON_LIB: C:\\miniconda3\\envs\\python\\libs\\python313.lib
 
     parser = HtmlPageParser(quiet=False)
     parser.feed(html)
+
+    assert parser.doc == expected_md
+
+
+def test_close():
+
+    html = """
+<html>
+<body>
+
+<p>
+This is a paragraph
+</p>
+"""
+
+    expected_md = "\nThis is a paragraph\n"
+
+    parser = HtmlPageParser()
+    parser.feed(html)
+
+    with pytest.warns(EndTagWarning, match=(r"force close 'body")):
+        with pytest.warns(EndTagWarning, match=(r"force close 'html")):
+            parser.close()
 
     assert parser.doc == expected_md
