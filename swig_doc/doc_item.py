@@ -58,10 +58,11 @@ class DocumentItem:
         if self.tag in ["li"]:
             # s = s.lstrip()
             s = s.rstrip()
+
         elif self.tag in ["p"]:
             s = s.strip()
-        elif self.tag == "table":
 
+        elif self.tag == "table":
             # ensure all columns are the same length and add underline
             s = self._format_table(s)
 
@@ -69,6 +70,16 @@ class DocumentItem:
                 caption := self.attrs.get("caption", self.attrs.get("summary", None))
             ) is not None:
                 s += f"\n**Table:** {caption}\n"
+
+        elif self.tag == "dl":
+            lines = s.split("\n")
+            for n, line in enumerate(lines):
+                if not line.startswith("-"):
+                    line = line.strip()
+                    if line:
+                        lines[n] = f"    {line}"
+
+            s = "\n".join(lines)
 
         if self.is_block:
             ret = f"\n{s}\n"

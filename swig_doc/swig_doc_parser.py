@@ -67,7 +67,7 @@ class SwigDocParser:
 
         for name in self._chapters:
             # if name != "Doxygen":
-                # continue
+            #     continue
             self._write_file(name)
             self._write_redirect_page(name)
 

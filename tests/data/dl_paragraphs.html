@@ -1,0 +1,93 @@
+<dl>
+
+<dt> <b>configure.ac</b>
+<dd> This file is processed by
+
+<p>
+<A HREF="https://www.gnu.org/software/autoconf/">autoconf</A>
+to generate the <TT>configure</TT> script.  This is where you
+need to add shell script fragments and autoconf macros to detect the
+presence of whatever development support your language module requires,
+typically directories where headers and libraries can be found, and/or
+utility programs useful for integrating the generated wrapper code.
+</p>
+
+<p>
+Use the <TT>AC_ARG_WITH</TT>, <TT>AC_MSG_CHECKING</TT>, <TT>AC_SUBST</TT>
+macros and so forth (see other languages for examples).  Avoid using the
+<TT>[</TT> and <TT>]</TT> character in shell script fragments.  The
+variable names passed to <TT>AC_SUBST</TT> should begin with the nickname,
+entirely upcased.
+</p>
+
+<p>
+At the end of the new section is the place to put the aforementioned
+nickname kludges (should they be needed).  See Perl5 for
+examples of what to do.  [If this is still unclear after you've read
+the code, ping me and I'll expand on this further.  --ttn]
+</p>
+
+<dt> <b>Makefile.in</b>
+<dd>
+
+<p>
+Some of the variables AC_SUBSTituted are essential to the
+support of your language module.  Fashion these into a shell script
+"test" clause and assign that to a skip tag using "-z" and "-o":
+</p>
+
+<div class="code"><tt>
+skip-qux99 = [ -z "@QUX99INCLUDE@" -o -z "@QUX99LIBS" ]
+</tt></div>
+
+<p>
+This means if those vars should ever be empty, qux99 support should
+be considered absent and so it would be a good idea to skip actions that
+might rely on it.
+</p>
+
+<p>
+Here is where you may also define an alias (but then you'll need to
+kludge --- don't do this):
+</p>
+
+<div class="code"><tt>
+skip-qux = $(skip-qux99)
+</tt></div>
+
+<p>
+Lastly, you need to modify each of <TT>check-aliveness</TT>,
+<TT>check-examples</TT>, <TT>check-test-suite</TT>
+and <TT>lib-languages</TT> (var).
+Use the nickname for these, not the alias.
+Note that you can do this even before you have any tests or examples
+set up; the Makefile rules do some sanity checking and skip around
+these kinds of problems.
+</p>
+
+<dt> <b>Examples/Makefile.in</b>
+<dd> Nothing special here; see comments at the top of this file
+and look to the existing languages for examples.
+
+<dt> <b>Examples/qux99/check.list</b>
+<dd> Do <TT>cp ../python/check.list .</TT> and modify to taste.
+One subdir per line.
+
+<dt> <b>Lib/qux99/extra-install.list</b>
+<dd> If you add your language to the top-level Makefile.in var
+<TT>lib-languages</TT>, then <TT>make install</TT> will install
+all <TT>*.i</TT> and <TT>*.swg</TT> files from the language-specific
+subdirectory of <TT>Lib</TT>.  Use (optional) file
+<TT>extra-install.list</TT> in that directory to name
+additional files to install (see ruby for example).
+
+<dt> <b>Source/Modules/Makefile.am</b>
+<dd> Add appropriate files to this Automake file. That's it!
+
+<p>
+When you have modified these files, please make sure that the new language module is completely
+ignored if it is not installed and detected on a box, that is, <tt>make check-examples</tt> and <tt>make check-test-suite</tt>
+politely displays the ignoring language message.
+</p>
+
+</dl>

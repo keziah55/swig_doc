@@ -236,3 +236,55 @@ column</td>
     parser.feed(html)
 
     assert parser.doc == expected_md
+
+
+def test_description_details():
+
+    html = """
+<p>Cryptids of Cornwall:</p>
+
+<dl>
+  <dt><b>Beast of Bodmin</b></dt>
+  <dd>A large feline inhabiting Bodmin Moor.</dd>
+
+  <dt><b>Morgawr</b></dt>
+  <dd>A sea serpent.</dd>
+
+  <dt><b>Owlman</b></dt>
+  <dd>A giant owl-like creature.</dd>
+</dl>
+"""
+
+    parser = HtmlPageParser()
+    parser.feed(html)
+
+    expected_md = """
+Cryptids of Cornwall:
+
+- **Beast of Bodmin**
+
+    A large feline inhabiting Bodmin Moor.
+
+- **Morgawr**
+
+    A sea serpent.
+
+- **Owlman**
+
+    A giant owl-like creature.
+
+"""
+
+    assert parser.doc == expected_md
+
+
+def test_description_details_paragraphs(data_dir):
+
+    fname = "dl_paragraphs"
+    html_file = data_dir.joinpath(f"{fname}.html")
+    expected = data_dir.joinpath(f"{fname}.md").read_text()
+
+    parser = HtmlPageParser(target_language="python")
+    md = parser.parse(html_file)
+
+    assert md.strip() == expected.strip()

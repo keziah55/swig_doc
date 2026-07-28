@@ -172,6 +172,10 @@ class HtmlToMd:
     def ol(cls, mode: Literal["start", "end"], **kwargs) -> str:
         return cls._list(mode, **kwargs)
 
+    @classmethod
+    def dl(cls, mode: Literal["start", "end"], **kwargs) -> str:
+        return cls._list(mode, **kwargs)
+
     @staticmethod
     def tt(*args, **kwargs) -> str:
         return "`"
@@ -272,3 +276,21 @@ class HtmlToMd:
             return " | "
         else:
             return ""
+
+    @staticmethod
+    def dt(mode: Literal["start", "end"], **kwargs) -> str:
+
+        match mode:
+            case "start":
+                return "\n- "
+            case "end":
+                return "\n\n"
+
+    @staticmethod
+    def dd(mode: Literal["start", "end"], **kwargs) -> str:
+
+        match mode:
+            case "start" | "data":
+                return ""
+            case "end":
+                return "\n\n"

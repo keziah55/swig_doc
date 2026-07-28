@@ -112,7 +112,11 @@ class HtmlPageParser(HTMLParser):
         attrs = dict(attrs)
 
         if not self._quiet:
-            print(f"START: {tag} {attrs}")
+            if self._doc_items.current is not None:
+                ci = f"; current: {self._doc_items.current.tag}"
+            else:
+                ci = ""
+            print(f"START: {tag}{ci}")
 
         if tag == "a" and "href" in attrs:
             attrs["href"] = transform_internal_link(attrs["href"])
@@ -120,9 +124,11 @@ class HtmlPageParser(HTMLParser):
         if not self._handle_tag(tag, attrs=attrs, mode="start"):
             return
 
-        if tag == "li" and self._doc_items.current.tag == "li":
-            # <li> might not be closed, so end tag manually here
-            self.handle_endtag("li")
+        possible_unclosed = {"li": ["li"], "dd": ["dt", "dd"], "dt": ["dd"]}
+        for unclosed_tag, unclosed_tag_parents in possible_unclosed.items():
+            if tag == unclosed_tag and self._doc_items.current.tag in unclosed_tag_parents:
+                # <li>, <dt> or <dd> might not be closed, so end tag manually here
+                self.handle_endtag(self._doc_items.current.tag)
 
         item = self._new_doc_item(tag, attrs=attrs)
 
@@ -134,12 +140,13 @@ class HtmlPageParser(HTMLParser):
         """Handle a tag closing."""
 
         if not self._quiet:
-            print(f"END:  {tag}")
+            print(f"END:   {tag}")
 
         if not self._handle_tag(tag, mode="end"):
             return
 
         item = self._doc_items.pop()
+
         while item is not None and item.tag != tag:
             if item is None:
                 warnings.warn(
@@ -163,7 +170,7 @@ class HtmlPageParser(HTMLParser):
             return
 
         if (func := HtmlToMd.get(tag)) is not None:
-            s = func("end", parent=item.parent)
+            s = func(mode="end", parent=item.parent)
             item.append_data(s)
 
         self._close_doc_item(item)
