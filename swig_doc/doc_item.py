@@ -17,6 +17,7 @@ class DocumentItem:
     _quiet: bool = True
 
     _block_tags = ["p", "div", "ul", "ol", "blockquote"]  # also headers
+    _inline_tags = ["tt", "em", "i", "strong", "b", "s", "sub", "sup", "mark", "q"]
 
     def __repr__(self) -> str:
 
@@ -78,8 +79,13 @@ class DocumentItem:
                     line = line.strip()
                     if line:
                         lines[n] = f"    {line}"
-
             s = "\n".join(lines)
+
+        elif self.tag == "tt":
+            # tt tag is wrapped with single backquote; if there are multiple lines,
+            # switch to triple backquotes
+            if "\n" in s:
+                s = f"```\n{s.strip('\n`')}\n```"
 
         if self.is_block:
             ret = f"\n{s}\n"
@@ -175,6 +181,8 @@ class DocumentItem:
             data = data.lstrip()
         elif self.tag in ["td", "th"]:
             data = re.sub(r"\n+", " ", data)
+        elif len(self.data) == 1 and self.tag in self._inline_tags:
+            data = data.strip(" ")
 
         if data is None or data == "":
             return

@@ -32,9 +32,15 @@ class HtmlPageParser(HTMLParser):
             "darr": chr(8595),
         }
 
-        self._quiet = quiet
-        self.reset(target_language, shell_language)
+        # these tags should be self-closing; if we get a start tag for them, close it
+        # immediately
+        self._self_closing = ["br", "hr"]
+
         self._data_tags = ["p", "blockquote"]
+
+        self._quiet = quiet
+
+        self.reset(target_language, shell_language)
 
     def reset(
         self, target_language: Optional[str] = None, shell_language: Optional[str] = None
@@ -124,17 +130,23 @@ class HtmlPageParser(HTMLParser):
         if not self._handle_tag(tag, attrs=attrs, mode="start"):
             return
 
-        possible_unclosed = {"li": ["li"], "dd": ["dt", "dd"], "dt": ["dd"]}
-        for unclosed_tag, unclosed_tag_parents in possible_unclosed.items():
-            if tag == unclosed_tag and self._doc_items.current.tag in unclosed_tag_parents:
-                # <li>, <dt> or <dd> might not be closed, so end tag manually here
-                self.handle_endtag(self._doc_items.current.tag)
+        possible_unclosed = {"li": ["li"], "dd": ["dt", "dd"], "dt": ["dd"], "p": ["p"]}
+        if self._doc_items.current is not None:
+            for unclosed_tag, unclosed_tag_parents in possible_unclosed.items():
+                if tag == unclosed_tag and self._doc_items.current.tag in unclosed_tag_parents:
+                    # <li>, <dt> or <dd> might not be closed, so end tag manually here
+                    if not self._quiet:
+                        print(f"Force end tag {self._doc_items.current.tag}")
+                    self.handle_endtag(self._doc_items.current.tag)
 
         item = self._new_doc_item(tag, attrs=attrs)
 
         if (func := HtmlToMd.get(tag)) is not None:
             s = func("start", parent=item.parent)
             item.append_data(s)
+
+        if tag in self._self_closing:
+            self.handle_endtag(tag)
 
     def handle_endtag(self, tag: str):
         """Handle a tag closing."""

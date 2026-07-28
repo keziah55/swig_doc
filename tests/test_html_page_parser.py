@@ -255,9 +255,6 @@ def test_description_details():
 </dl>
 """
 
-    parser = HtmlPageParser()
-    parser.feed(html)
-
     expected_md = """
 Cryptids of Cornwall:
 
@@ -275,6 +272,9 @@ Cryptids of Cornwall:
 
 """
 
+    parser = HtmlPageParser()
+    parser.feed(html)
+
     assert parser.doc == expected_md
 
 
@@ -288,3 +288,51 @@ def test_description_details_paragraphs(data_dir):
     md = parser.parse(html_file)
 
     assert md.strip() == expected.strip()
+
+
+def test_leading_space_inline():
+
+    html = "<b> What is received back by java.cxx </b>"
+    expected_md = "**What is received back by java.cxx**"
+
+    parser = HtmlPageParser()
+    parser.feed(html)
+
+    assert parser.doc == expected_md
+
+
+def test_multiline_tt():
+    html = """
+<p>
+<b><tt>PYTHON_INCLUDE</tt></b> : Set this to the directory that contains Python.h<br>
+<b><tt>PYTHON_LIB</tt></b> : Set this to the Python library including path for linking<p>
+Example using Python 3.13 installed in a Conda environment:<br>
+<tt>
+PYTHON_INCLUDE: C:\\miniconda3\\envs\\python\\include<br>
+PYTHON_LIB: C:\\miniconda3\\envs\\python\\libs\\python313.lib<br>
+</tt>
+</p>
+"""
+
+    expected_md = """
+**`PYTHON_INCLUDE`** : Set this to the directory that contains Python.h
+
+**`PYTHON_LIB`** : Set this to the Python library including path for linking
+
+Example using Python 3.13 installed in a Conda environment:
+
+```
+PYTHON_INCLUDE: C:\\miniconda3\\envs\\python\\include
+
+PYTHON_LIB: C:\\miniconda3\\envs\\python\\libs\\python313.lib
+```
+"""
+
+    print()
+    parser = HtmlPageParser(quiet=False)
+    parser.feed(html)
+
+    
+    print(parser.doc)
+
+    assert parser.doc == expected_md

@@ -28,9 +28,9 @@
     support of your language module.  Fashion these into a shell script
     "test" clause and assign that to a skip tag using "-z" and "-o":
 
-    `
+    ```
     skip-qux99 = [ -z "@QUX99INCLUDE@" -o -z "@QUX99LIBS" ]
-    `
+    ```
 
     This means if those vars should ever be empty, qux99 support should
     be considered absent and so it would be a good idea to skip actions that
@@ -39,9 +39,9 @@
     Here is where you may also define an alias (but then you'll need to
     kludge --- don't do this):
 
-    `
+    ```
     skip-qux = $(skip-qux99)
-    `
+    ```
 
     Lastly, you need to modify each of `check-aliveness`,
     `check-examples`, `check-test-suite`
