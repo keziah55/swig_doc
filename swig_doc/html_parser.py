@@ -244,14 +244,7 @@ class HtmlPageParser(HTMLParser):
                 item = self._new_doc_item(tag="string")
 
             if char == ">":
-                char = f"\\{char}"
-                # # check if we're in the "Java/Python Doxygen tags" table
-                # if (table := item.search_parents("table")) is not None:
-                #     if table.attrs.get("summary", "") in [
-                #         "Java Doxygen tags",
-                #         "Python Doxygen tags",
-                #         "CSharp XML Doxygen tags"
-                #     ]:
-                #         char = f"\\{char}"
+                if item.tag not in ["pre", "tt"]:
+                    char = f"\\{char}"
 
             item.append_data(char)
