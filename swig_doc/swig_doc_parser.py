@@ -63,8 +63,13 @@ class SwigDocParser:
         # non-language chapters, where we want to use python the target lang for code blocks
         self._python_chapters = ["arguments", "varargs"]
 
-    def write(self):
-        """Write all files."""
+    def write(self) -> bool:
+        """
+        Write all files.
+
+        After generating the markdown, validate against the html. If any page fails validation,
+        this function returns False. If all pages are valid, return True.
+        """
 
         self._write_index()
 
@@ -88,6 +93,8 @@ class SwigDocParser:
                     print(f"  Header level {level}")
                     for header in headers:
                         print(f"    {header}")
+
+        return len(validation) == 0
 
     def _get_chapters_list(self) -> list[str]:
 
