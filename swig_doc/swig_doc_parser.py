@@ -63,7 +63,7 @@ class SwigDocParser:
         # non-language chapters, where we want to use python the target lang for code blocks
         self._python_chapters = ["arguments", "varargs"]
 
-    def write(self) -> bool:
+    def write(self, validate: bool = True) -> bool:
         """
         Write all files.
 
@@ -78,11 +78,12 @@ class SwigDocParser:
         for name in self._chapters:
             if name != "Scilab":
                 continue
+
             md = self._make_markdown(name)
             self._write_file(name, md)
             self._write_redirect_page(name)
 
-            if (diff := self._validate(name, md)) is not None:
+            if validate and (diff := self._validate(name, md)) is not None:
                 validation[name] = diff
 
         if validation:
@@ -130,8 +131,7 @@ class SwigDocParser:
         language = self._get_target_language(name)
         shell_language = self._get_shell_language(name)
         parser = HtmlPageParser(target_language=language, shell_language=shell_language)
-        text = parser.parse(html_file)
-        parser.close()
+        text = parser.parse(html_file, auto_close=True)
 
         return text
 
@@ -175,8 +175,8 @@ class SwigDocParser:
         """
         Check that headers in html file match those in markdown text.
 
-        Return `None` if there are no differences. Otherwise, return a dict of header level (int)
-        and set of non-matching header strings.
+        Return `None` if there are no differences. Otherwise, return a dict of header level
+        (int) and set of non-matching header strings.
         """
 
         html_file = self._html_path.joinpath(f"{name}.html")

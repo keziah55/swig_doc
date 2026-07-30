@@ -284,7 +284,12 @@ def test_description_details_paragraphs(data_dir):
     expected = data_dir.joinpath(f"{fname}.md").read_text()
 
     parser = HtmlPageParser(target_language="python")
-    md = parser.parse(html_file)
+
+    with pytest.warns(
+        EndTagWarning,
+        match=r"End tag 'dl' encountered at \(93, 0\); force close 'dd' at pos \(85, 0\)",
+    ):
+        md = parser.parse(html_file)
 
     assert md.strip() == expected.strip()
 

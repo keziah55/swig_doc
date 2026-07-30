@@ -81,15 +81,24 @@ class HtmlPageParser(HTMLParser):
         """Return markdown document."""
 
         s = "".join(self._doc_parts)
-
         s = re.sub(r"\n\n\n+", "\n\n", s)
 
         return s
 
-    def parse(self, html_file: Path) -> str:
-        """Convert html file content to markdown."""
+    def parse(self, html_file: Path, auto_close: bool = True) -> str:
+        """
+        Convert html file content to markdown.
+
+        If `auto_close`, call `close()` before returning. This may be necessary to handle
+        any unclosed html tags in the document.
+
+        """
 
         self.feed(html_file.read_text())
+
+        if auto_close:
+            self.close()
+
         return self.doc
 
     def _handle_tag(self, tag: str, mode: str, attrs: Optional[dict] = None) -> bool:
@@ -142,6 +151,7 @@ class HtmlPageParser(HTMLParser):
         item = self._doc_items.pop()
 
         while item is not None:
+
             if stop_tag is not None and item.tag == stop_tag:
                 break
 
@@ -156,7 +166,7 @@ class HtmlPageParser(HTMLParser):
 
             warnings.warn(f"{prefix}force close {item}", EndTagWarning)
 
-            # close previous doc item
+            # close doc item
             self._close_doc_item(item)
 
             # pop next doc item
