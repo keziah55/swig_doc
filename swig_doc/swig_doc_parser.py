@@ -76,8 +76,8 @@ class SwigDocParser:
         validation: dict[str : dict[int, set]] = {}
 
         for name in self._chapters:
-            if name != "Scilab":
-                continue
+            # if name != "Scilab":
+            #     continue
 
             md = self._make_markdown(name)
             self._write_file(name, md)
