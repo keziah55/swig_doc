@@ -76,8 +76,8 @@ class SwigDocParser:
         validation: dict[str : dict[int, set]] = {}
 
         for name in self._chapters:
-            # if name != "Scilab":
-            #     continue
+            if name != "Scilab":
+                continue
             md = self._make_markdown(name)
             self._write_file(name, md)
             self._write_redirect_page(name)
@@ -194,7 +194,7 @@ class SwigDocParser:
                 # un-escape any `>` chars in header string and remove any backticks
                 (m.group("h_str").replace("\\>", ">").replace("`", ""), m.group("a_name"))
                 for m in re.finditer(
-                    r"\n" + md_head + r' <a name="(?P<a_name>\w+)"></a> +(?P<h_str>.+)', md
+                    r"\n" + md_head + r' <a name="(?P<a_name>[\w-]+)"></a> +(?P<h_str>.+)', md
                 )
             ]
 
