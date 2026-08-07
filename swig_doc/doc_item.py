@@ -275,7 +275,11 @@ class TableItem:
     def __init__(self):
 
         self._data = []
+
+        # tags/attrs that, if present within table, mean the table should stay as html
+        self._unhandled_tags = ["pre"]
         self._unhandled_attrs = ["colspan"]
+
         self._can_be_converted = True
         self._active = True
 
@@ -353,7 +357,9 @@ class TableItem:
 
         self._data.append((mode, tag, attrs))
 
-        if attrs is not None and any(key in attrs for key in self._unhandled_attrs):
+        if tag in self._unhandled_tags:
+            self._can_be_converted = False
+        elif attrs is not None and any(key in attrs for key in self._unhandled_attrs):
             self._can_be_converted = False
 
         if mode == "end" and tag == "table":
