@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Self
+from typing import Optional, Self, Literal
 import re
 from .utils import HEADER_REGEX
 
@@ -257,3 +257,104 @@ class DocItemStack:
             return None
         else:
             return self._stack[:-2]
+
+
+class TableItem:
+    """
+    Class to gather html table data.
+
+    Each `handle_[name]` function call from `HtmlParser` is logged by calling
+    `append_data`.
+
+    The table can then be reconstructed into html, with the `table_html` property,
+    or can be converted into markdown via a list of `HtmlParser` function names and args
+    (`function_calls` property).
+
+    """
+
+    def __init__(self):
+
+        self._data = []
+        self._unhandled_attrs = ["colspan"]
+        self._can_be_converted = True
+        self._active = True
+
+    @property
+    def can_be_converted(self) -> bool:
+        """True if html table can be converted to markdown."""
+        return self._can_be_converted
+
+    @property
+    def is_complete(self) -> bool:
+        """False if table data has not yet all been gathered."""
+        return not self._active
+
+    @property
+    def table_html(self) -> str:
+        """Return table html as string."""
+
+        s = ""
+
+        for mode, tag, attrs in self._data:
+
+            match mode:
+                case "end":
+                    s += f"</{tag}>"
+                case "data":
+                    s += tag
+                case "entityref":
+                    s += f"&{tag};"
+                case "start" | "startend":
+                    if attrs:
+                        attrs_str = " ".join(
+                            [f'{key}="{value}"' for key, value in attrs.items()]
+                        )
+                        attrs_str = " " + attrs_str
+                    else:
+                        attrs_str = ""
+
+                    open_str = "<"
+                    close_str = "/>" if mode == "startend" else ">"
+                    s += f"{open_str}{tag}{attrs_str}{close_str}"
+
+        return s
+
+    @property
+    def function_calls(self) -> list[tuple[str, str, dict]]:
+        """
+        Return list of function calls and args to process the html into markdown.
+
+        First item in each tuple is the function name, then the `tag` string, then
+        `kwargs` dict.
+        """
+
+        lst = []
+
+        for mode, tag, attrs in self._data:
+            func_name = f"handle_{mode}"
+            if mode in ["start", "startend", "end"]:
+                func_name += "tag"
+
+            kwargs = {}
+            if attrs is not None:
+                kwargs["attrs"] = list(attrs.items())
+
+            lst.append((func_name, tag, kwargs))
+
+        return lst
+
+    def append_data(
+        self,
+        tag: str,
+        attrs: Optional[dict] = None,
+        mode: Literal["start", "startend", "end", "data", "entityref"] = "data",
+    ):
+        """Append table tags/data."""
+
+        self._data.append((mode, tag, attrs))
+
+        if attrs is not None and any(key in attrs for key in self._unhandled_attrs):
+            self._can_be_converted = False
+
+        if mode == "end" and tag == "table":
+            self._active = False

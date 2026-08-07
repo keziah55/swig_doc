@@ -151,7 +151,7 @@ def test_table():
 **Table:** nickname table
 """  # noqa W291
 
-    parser = HtmlPageParser()
+    parser = HtmlPageParser(quiet=False)
     parser.feed(html)
 
     assert parser.doc == expected_md
@@ -359,3 +359,43 @@ This is a paragraph
             parser.close()
 
     assert parser.doc == expected_md
+
+
+def test_html_table():
+
+    html = """<table border="1" summary="Rewriting rules">
+<tr><th>Input</th><th>Rewritten to</th></tr>
+<tr><td>f'( ... ) as in<br> atoi'("0") or<br> _exit'(0)</td>
+<td>f(C_list [ ... ]) as in<br> atoi (C_list [ C_string "0" ]) or<br> _exit (C_list [ C_int 0 ])</td></tr>
+<tr><td>object -&gt; method ( ... )</td><td>(invoke object) "method" (C_list [ ... ])</td></tr>
+<tr><td>
+object <i>'binop</i> argument as in<br>
+a '+= b</td>
+<td>
+(invoke object) "+=" argument as in<br>
+(invoke a) "+=" b</td></tr>
+<tr><th colspan=2>Note that because camlp4 always recognizes &lt;&lt;
+and &gt;&gt;, they are replaced by lsl and lsr in operator names.
+<tr><td>
+<i>'unop</i> object as in<br>
+'! a
+</td><td>
+(invoke a) "!" C_void</td></tr>
+<tr><td>
+<b>Smart pointer access like this</b><br>
+object '-&gt; method ( args )<br>
+</td><td>
+(invoke (invoke object "-&gt;" C_void))
+</td></tr>
+</table>"""  # noqa E501
+
+    parser = HtmlPageParser()
+    parser.feed(html)
+
+    expected = html.replace("\n", "")
+
+    # when reconstructing html, attr values are always quoted
+    # HtmlParser does not retain the quotes when passing into `handle_starttag`
+    expected = expected.replace("colspan=2", 'colspan="2"')
+
+    assert parser.doc.replace("\n", "") == expected

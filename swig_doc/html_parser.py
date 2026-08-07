@@ -5,7 +5,7 @@ import warnings
 import re
 
 
-from .doc_item import DocumentItem, DocItemStack
+from .doc_item import DocumentItem, DocItemStack, TableItem
 from .md_utils import HtmlToMd, transform_internal_link
 from .exceptions import EndTagWarning
 
@@ -63,6 +63,9 @@ class HtmlPageParser(HTMLParser):
         self._doc_items = DocItemStack()
 
         self._active = True
+
+        self._table_item: Optional[TableItem] = None
+        self._force_handle_table = False
 
     def close(self):
         """
@@ -174,6 +177,37 @@ class HtmlPageParser(HTMLParser):
 
         return item
 
+    def _close_table(self):
+
+        if self._table_item is None:
+            return
+
+        if self._table_item.can_be_converted:
+            self._force_handle_table = True
+
+            for func_name, tag, kwargs in self._table_item.function_calls:
+                func = getattr(self, func_name)
+                func(tag, **kwargs)
+
+        else:
+            table_html = self._table_item.table_html
+            if len(self._doc_items) > 0:
+                # append raw html to current item data
+                item = self._doc_items.current
+                item.append_data(table_html)
+            else:
+                # if no open doc item, append directly to `_doc_parts` list
+                self._doc_parts.append(table_html)
+
+        self._table_item = None
+        self._force_handle_table = False
+
+    @property
+    def _send_table_data_to_item(self) -> bool:
+        """Return True if `_table_item` should be used to handle tags/data."""
+
+        return self._force_handle_table is False and self._table_item is not None
+
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str]]):
         """Handle a tag opening."""
 
@@ -190,6 +224,13 @@ class HtmlPageParser(HTMLParser):
             attrs["href"] = transform_internal_link(attrs["href"])
 
         if not self._handle_tag(tag, attrs=attrs, mode="start"):
+            return
+
+        if not self._force_handle_table and tag == "table" and self._table_item is None:
+            self._table_item = TableItem()
+
+        if self._send_table_data_to_item:
+            self._table_item.append_data(tag, attrs, mode="start")
             return
 
         possible_unclosed = {"li": ["li"], "dd": ["dt", "dd"], "dt": ["dd"], "p": ["p"]}
@@ -219,6 +260,12 @@ class HtmlPageParser(HTMLParser):
         if not self._handle_tag(tag, mode="end"):
             return
 
+        if self._send_table_data_to_item:
+            self._table_item.append_data(tag, mode="end")
+            if self._table_item.is_complete:
+                self._close_table()
+            return
+
         item = self._close_doc_items(tag)
         if item is None:
             return
@@ -236,6 +283,10 @@ class HtmlPageParser(HTMLParser):
             return
 
         attrs = dict(attrs)
+
+        if self._send_table_data_to_item:
+            self._table_item.append_data(tag, attrs, mode="startend")
+            return
 
         item = self._new_doc_item(tag, attrs=attrs)
 
@@ -260,6 +311,10 @@ class HtmlPageParser(HTMLParser):
         if not data.strip() and ci != "p":
             return
 
+        if self._send_table_data_to_item:
+            self._table_item.append_data(data, mode="data")
+            return
+
         if len(self._doc_items) > 0:
             item = self._doc_items.current
         else:
@@ -279,6 +334,10 @@ class HtmlPageParser(HTMLParser):
 
         data = f"<!--{data}-->\n"
 
+        if self._send_table_data_to_item:
+            self._table_item.append_data(data, mode="data")
+            return
+
         item = self._new_doc_item("comment", data=[data])
         self._doc_items.pop()
         self._close_doc_item(item)
@@ -287,6 +346,10 @@ class HtmlPageParser(HTMLParser):
         """Handle `&[name];` entities (as we are using `convert_charrefs=False`)."""
 
         if not self._active:
+            return
+
+        if self._send_table_data_to_item:
+            self._table_item.append_data(name, mode="entityref")
             return
 
         char = self._entity_refs.get(name, None)
