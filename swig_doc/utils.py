@@ -1,5 +1,6 @@
 import re
 from string import Template
+from typing import Optional, Literal
 
 MARKDOWN_EXT = ".md"
 
@@ -23,3 +24,36 @@ REDIRECT_TEMPLATE = Template(
 </html>
 """
 )
+
+
+def make_html_tag(
+    mode: Literal["start", "startend", "end", "comment"],
+    tag: str,
+    attrs: Optional[dict] = None,
+    new_line: bool = True,
+) -> str:
+    """Make html tag."""
+
+    match mode:
+        case "end":
+            s = f"</{tag}>"
+        case "comment":
+            s = f"<!--{tag}-->"
+        case "start" | "startend":
+            if attrs:
+                attrs_str = " ".join([f'{key}="{value}"' for key, value in attrs.items()])
+                attrs_str = " " + attrs_str
+            else:
+                attrs_str = ""
+
+            open_str = "<"
+            close_str = "/>" if mode == "startend" else ">"
+            s = f"{open_str}{tag}{attrs_str}{close_str}"
+
+        case _:
+            raise ValueError(f"Unknown html tag mode '{mode}'")
+
+    if new_line:
+        s += "\n"
+
+    return s

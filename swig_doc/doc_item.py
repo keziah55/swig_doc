@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, Self, Literal
 import re
-from .utils import HEADER_REGEX
+from .utils import HEADER_REGEX, make_html_tag
 
 
 @dataclass
@@ -300,26 +300,12 @@ class TableItem:
         s = ""
 
         for mode, tag, attrs in self._data:
-
-            match mode:
-                case "end":
-                    s += f"</{tag}>"
-                case "data":
-                    s += tag
-                case "entityref":
-                    s += f"&{tag};"
-                case "start" | "startend":
-                    if attrs:
-                        attrs_str = " ".join(
-                            [f'{key}="{value}"' for key, value in attrs.items()]
-                        )
-                        attrs_str = " " + attrs_str
-                    else:
-                        attrs_str = ""
-
-                    open_str = "<"
-                    close_str = "/>" if mode == "startend" else ">"
-                    s += f"{open_str}{tag}{attrs_str}{close_str}"
+            if mode == "entityref":
+                s += f"&{tag};"
+            elif mode == "data":
+                s += tag
+            else:
+                s += make_html_tag(mode, tag, attrs, new_line=False)
 
         return s
 

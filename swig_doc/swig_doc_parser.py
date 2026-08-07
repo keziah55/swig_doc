@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional
 import re
+import shutil
 
 from bs4 import BeautifulSoup
 
@@ -63,6 +64,8 @@ class SwigDocParser:
         # non-language chapters, where we want to use python the target lang for code blocks
         self._python_chapters = ["arguments", "varargs"]
 
+        self._img_ext = ["png", "svg", "ico", "jpg", "jpeg"]
+
     def write(self, validate: bool = True) -> bool:
         """
         Write all files.
@@ -72,6 +75,8 @@ class SwigDocParser:
         """
 
         self._write_index()
+
+        self._copy_images()
 
         validation: dict[str : dict[int, set]] = {}
 
@@ -96,6 +101,14 @@ class SwigDocParser:
                         print(f"    {header}")
 
         return len(validation) == 0
+
+    def _copy_images(self):
+        """Copy all image files from `_html_path` to _`out_path`."""
+
+        for ext in self._img_ext:
+            files = self._html_path.glob(f"*.{ext}")
+            for file in files:
+                shutil.copy2(file, self._out_path)
 
     def _get_chapters_list(self) -> list[str]:
 

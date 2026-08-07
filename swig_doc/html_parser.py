@@ -7,6 +7,7 @@ import re
 
 from .doc_item import DocumentItem, DocItemStack, TableItem
 from .md_utils import HtmlToMd, transform_internal_link
+from .utils import make_html_tag
 from .exceptions import EndTagWarning
 
 
@@ -37,6 +38,9 @@ class HtmlPageParser(HTMLParser):
         self._self_closing = ["br", "hr"]
 
         self._data_tags = ["p", "blockquote"]
+
+        # tags that should be copied directly into markdown output
+        self._embed_html_tags = ["img", "center"]
 
         self._quiet = quiet
 
@@ -104,8 +108,23 @@ class HtmlPageParser(HTMLParser):
 
         return self.doc
 
+    def _append_str(self, s: str):
+        """Append string to open `DocumentItem` or `_doc_parts` list."""
+
+        if len(self._doc_items) > 0:
+            # append string to current item data
+            item = self._doc_items.current
+            item.append_data(s)
+        else:
+            # if no open doc item, append directly to `_doc_parts` list
+            self._doc_parts.append(s)
+
     def _handle_tag(self, tag: str, mode: str, attrs: Optional[dict] = None) -> bool:
         """Return True if parser should handle this tag."""
+
+        if tag in self._embed_html_tags:
+            self._embed_html(tag=tag, mode=mode, attrs=attrs)
+            return False
 
         if mode == "start":
             if (tag == "div" and "sectiontoc" in attrs.get("class", "")) or tag in ["title"]:
@@ -121,6 +140,12 @@ class HtmlPageParser(HTMLParser):
             return False
 
         return True
+
+    def _embed_html(self, tag: str, mode: str, attrs: Optional[dict] = None):
+        """Make html tag and append to document."""
+
+        html = make_html_tag(mode=mode, tag=tag, attrs=attrs)
+        self._append_str(html)
 
     def _new_doc_item(self, tag, **kwargs) -> DocumentItem:
 
@@ -184,20 +209,13 @@ class HtmlPageParser(HTMLParser):
 
         if self._table_item.can_be_converted:
             self._force_handle_table = True
-
             for func_name, tag, kwargs in self._table_item.function_calls:
                 func = getattr(self, func_name)
                 func(tag, **kwargs)
 
         else:
             table_html = self._table_item.table_html
-            if len(self._doc_items) > 0:
-                # append raw html to current item data
-                item = self._doc_items.current
-                item.append_data(table_html)
-            else:
-                # if no open doc item, append directly to `_doc_parts` list
-                self._doc_parts.append(table_html)
+            self._append_str(table_html)
 
         self._table_item = None
         self._force_handle_table = False
@@ -284,6 +302,10 @@ class HtmlPageParser(HTMLParser):
 
         attrs = dict(attrs)
 
+        if tag in self._embed_html_tags:
+            self._embed_html(tag=tag, mode="startend", attrs=attrs)
+            return
+
         if self._send_table_data_to_item:
             self._table_item.append_data(tag, attrs, mode="startend")
             return
@@ -332,15 +354,17 @@ class HtmlPageParser(HTMLParser):
         if not self._active:
             return
 
-        data = f"<!--{data}-->\n"
+        html = make_html_tag(mode="comment", tag=data) + "\n"
 
         if self._send_table_data_to_item:
-            self._table_item.append_data(data, mode="data")
+            self._table_item.append_data(html, mode="data")
             return
 
-        item = self._new_doc_item("comment", data=[data])
-        self._doc_items.pop()
-        self._close_doc_item(item)
+        self._append_str(html)
+
+        # item = self._new_doc_item("comment", data=[data])
+        # self._doc_items.pop()
+        # self._close_doc_item(item)
 
     def handle_entityref(self, name):
         """Handle `&[name];` entities (as we are using `convert_charrefs=False`)."""
