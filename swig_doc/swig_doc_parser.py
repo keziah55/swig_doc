@@ -2,12 +2,22 @@ from pathlib import Path
 from typing import Optional
 import re
 import shutil
+from dataclasses import dataclass
 
 from bs4 import BeautifulSoup
 
 from .html_parser import HtmlPageParser
 from .md_utils import make_md_head
 from .utils import MARKDOWN_EXT, REDIRECT_TEMPLATE
+
+
+@dataclass(frozen=True)
+class Report:
+    """Class used to store info about an html page parsing output."""
+
+    title: str
+    md_file: Path
+    validation: Optional[dict[int, set]]
 
 
 class SwigDocParser:
@@ -66,6 +76,9 @@ class SwigDocParser:
 
         self._img_ext = ["png", "svg", "ico", "jpg", "jpeg"]
 
+        # store info from `write`
+        self._reports: dict[Report] = {}
+
     def write(self, validate: bool = True) -> bool:
         """
         Write all files.
@@ -74,33 +87,54 @@ class SwigDocParser:
         this function returns False. If all pages are valid, return True.
         """
 
-        self._write_index()
-
         self._copy_images()
 
-        validation: dict[str : dict[int, set]] = {}
-
         for name in self._chapters:
-            # if name != "Scilab":
-            #     continue
-
-            md = self._make_markdown(name)
-            self._write_file(name, md)
+            print(name)
+            title, md = self._make_markdown(name)
+            md_file = self._write_file(name, md)
             self._write_redirect_page(name)
 
+            validation = None
             if validate and (diff := self._validate(name, md)) is not None:
-                validation[name] = diff
+                validation = diff
 
-        if validation:
-            print("The following pages failed header validation:")
-            for name, diff in validation.items():
-                print(f"{name}:")
-                for level, headers in diff.items():
-                    print(f"  Header level {level}")
+            if title is None:
+                title = name
+            self._reports[name] = Report(title=title, md_file=md_file, validation=validation)
+
+        if validate:
+            return self.report_validation()
+        return True
+
+    def report_validation(self) -> bool:
+        """
+        Return False and print to stdout if any pages failed validation.
+
+        Return True if all validation succeeded.
+        """
+
+        msgs = []
+
+        for name, report in self._reports.items():
+            if report.validation is not None:
+                msgs.append(f"{name}:")
+                for level, headers in report.validation.items():
+                    msgs.append(f"  Header level {level}")
                     for header in headers:
-                        print(f"    {header}")
+                        msgs.append(f"    {header}")
 
-        return len(validation) == 0
+        if len(msgs) > 0:
+            msg = "The following pages failed header validation:\n"
+            msg += "\n".join(msgs)
+            print(msg)
+            return False
+        return True
+
+    @property
+    def index_list(self) -> list[Path]:
+        """Return list of markdown files."""
+        return [report.md_file for report in self._reports.values()]
 
     def _copy_images(self):
         """Copy all image files from `_html_path` to _`out_path`."""
@@ -126,12 +160,19 @@ class SwigDocParser:
         index_file = self._out_path.joinpath(f"index{MARKDOWN_EXT}")
 
         lines = [make_md_head("SWIG", 1)]
-        lines += [f"- [{name}]({name}{MARKDOWN_EXT})" for name in self._chapters]
+        lines += [
+            f"- [{report.title}]({name}{MARKDOWN_EXT})"
+            for name, report in self._reports.items()
+        ]
 
         index_file.write_text("\n".join(lines))
 
-    def _make_markdown(self, name: str) -> str:
-        """Generate markdown text from html page for the given name."""
+    def _make_markdown(self, name: str) -> tuple[str, str]:
+        """
+        Generate markdown text from html page for the given name.
+
+        Return tuple of page title and content.
+        """
 
         html_file = self._html_path.joinpath(f"{name}.html")
 
@@ -139,20 +180,20 @@ class SwigDocParser:
             # for now
             return
 
-        print()
-        print(name)
         language = self._get_target_language(name)
         shell_language = self._get_shell_language(name)
         parser = HtmlPageParser(target_language=language, shell_language=shell_language)
         text = parser.parse(html_file, auto_close=True)
 
-        return text
+        return parser.title, text
 
-    def _write_file(self, name: str, text: str):
+    def _write_file(self, name: str, text: str) -> Path:
         """Write markdown file."""
 
         out_file = self._out_path.joinpath(f"{name}{MARKDOWN_EXT}")
         out_file.write_text(text)
+
+        return out_file
 
     def _write_redirect_page(self, name: str):
         """Write `[name].html` page that redirects to `base_url/name`."""
@@ -184,7 +225,7 @@ class SwigDocParser:
             return "powershell"
         return None
 
-    def _validate(self, name: str, md: str) -> Optional[dict[int:set]]:
+    def _validate(self, name: str, md: str) -> Optional[dict[int, set]]:
         """
         Check that headers in html file match those in markdown text.
 

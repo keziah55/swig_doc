@@ -60,6 +60,8 @@ class HtmlPageParser(HTMLParser):
         HtmlToMd.set_target_language(target_language)
         HtmlToMd.set_shell_language(shell_language)
 
+        self._page_title: Optional[str] = None
+
         # list of strings from completed DocumentItems
         self._doc_parts: list[str] = []
 
@@ -70,6 +72,8 @@ class HtmlPageParser(HTMLParser):
 
         self._table_item: Optional[TableItem] = None
         self._force_handle_table = False
+
+        self._last_start_tag: Optional[str] = None
 
     def close(self):
         """
@@ -91,6 +95,11 @@ class HtmlPageParser(HTMLParser):
         s = re.sub(r"\n\n\n+", "\n\n", s)
 
         return s
+
+    @property
+    def title(self) -> Optional[str]:
+        """Return page title, if set."""
+        return self._page_title
 
     def parse(self, html_file: Path, auto_close: bool = True) -> str:
         """
@@ -231,6 +240,8 @@ class HtmlPageParser(HTMLParser):
 
         attrs = dict(attrs)
 
+        self._last_start_tag = tag
+
         if not self._quiet:
             if self._doc_items.current is not None:
                 ci = f"; current: {self._doc_items.current.tag}"
@@ -321,6 +332,10 @@ class HtmlPageParser(HTMLParser):
 
     def handle_data(self, data: str):
         """Handle data within or outwith a tag."""
+
+        if self._last_start_tag == "title" and self._page_title is None and data.strip():
+            self._page_title = data.strip()
+            return
 
         ci = self._doc_items.current.tag if self._doc_items.current is not None else None
 
