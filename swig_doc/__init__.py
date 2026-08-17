@@ -1,3 +1,3 @@
-from .swig_doc_parser import SwigDocParser
+from .swig_markdown_generator import SwigMarkdownGenerator
 
-__all__ = ["SwigDocParser"]
+__all__ = ["SwigMarkdownGenerator"]
