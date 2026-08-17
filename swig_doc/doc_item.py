@@ -233,31 +233,6 @@ class DocItemStack:
             return None
         return self._stack[-1]
 
-    @property
-    def parent(self) -> Optional[DocumentItem]:
-        """
-        Return parent of currently open tag.
-
-        Return `None` if there is no parent.
-        """
-
-        if len(self._stack) < 2:
-            return None
-        return self._stack[-2]
-
-    @property
-    def parents(self) -> Optional[list[DocumentItem]]:
-        """
-        Return all parent of currently open tag.
-
-        Return `None` if there are no parents.
-        """
-
-        if len(self._stack) < 2:
-            return None
-        else:
-            return self._stack[:-2]
-
 
 class TableItem:
     """
