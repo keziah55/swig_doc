@@ -7,9 +7,7 @@ from pathlib import Path
 import tempfile
 import subprocess
 import shutil
-import sys
 from typing import Optional
-import re
 
 
 from swig_doc import SwigMarkdownGenerator
