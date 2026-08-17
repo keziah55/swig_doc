@@ -26,17 +26,21 @@ class SwigMarkdownGenerator:
 
     @staticmethod
     def _make_docs_path(repo_root: Path) -> Path:
-        """
-        Make `docs` dir in `repo_root`.
-
-        Any existing dir is removed.
-        """
+        """Remove any existing data from `docs` dir."""
 
         docs_path = repo_root.joinpath("docs")
+        if not docs_path.exists():
+            raise FileNotFoundError(f"`docs` path not found: '{docs_path}'")
 
-        if docs_path.exists():
-            shutil.rmtree(docs_path)
-        docs_path.mkdir(parents=True)
+        dont_delete = ["image"]
+
+        for item in docs_path.iterdir():
+            if item.name in dont_delete:
+                continue
+            if item.is_dir():
+                shutil.rmtree(item)
+            elif item.is_file():
+                item.unlink()
 
         return docs_path
 
