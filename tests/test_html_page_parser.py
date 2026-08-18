@@ -436,7 +436,7 @@ cupidatat non proident, sunt in culpa qui officia deserunt mollit
 anim id est laborum.
 """
 
-    parser = HtmlPageParser(embed_html_tags = ["img", "center"])
+    parser = HtmlPageParser(embed_html_tags=["img", "center"])
     parser.feed(html)
     parser.close()
 
