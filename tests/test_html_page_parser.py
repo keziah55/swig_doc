@@ -436,6 +436,23 @@ cupidatat non proident, sunt in culpa qui officia deserunt mollit
 anim id est laborum.
 """
 
+    parser = HtmlPageParser(embed_html_tags = ["img", "center"])
+    parser.feed(html)
+    parser.close()
+
+    assert parser.doc == expected_md
+
+
+def test_convert_image():
+
+    html = """
+<center>
+<img src="demo.png" alt="alt text">
+</center>
+"""
+
+    expected_md = "\n![alt text](demo.png)\n"
+
     parser = HtmlPageParser()
     parser.feed(html)
     parser.close()

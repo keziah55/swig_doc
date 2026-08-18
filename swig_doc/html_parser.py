@@ -18,6 +18,7 @@ class HtmlPageParser(HTMLParser):
         target_language: Optional[str] = None,
         shell_language: Optional[str] = None,
         quiet: bool = True,
+        embed_html_tags: Optional[list[str]] = None,
     ):
         super().__init__(convert_charrefs=False)
 
@@ -35,12 +36,12 @@ class HtmlPageParser(HTMLParser):
 
         # these tags should be self-closing; if we get a start tag for them, close it
         # immediately
-        self._self_closing = ["br", "hr"]
+        self._self_closing = ["br", "hr", "img"]
 
         self._data_tags = ["p", "blockquote"]
 
         # tags that should be copied directly into markdown output
-        self._embed_html_tags = ["img", "center"]
+        self._embed_html_tags = embed_html_tags if embed_html_tags is not None else []
 
         self._quiet = quiet
 
@@ -376,10 +377,6 @@ class HtmlPageParser(HTMLParser):
             return
 
         self._append_str(html)
-
-        # item = self._new_doc_item("comment", data=[data])
-        # self._doc_items.pop()
-        # self._close_doc_item(item)
 
     def handle_entityref(self, name):
         """Handle `&[name];` entities (as we are using `convert_charrefs=False`)."""

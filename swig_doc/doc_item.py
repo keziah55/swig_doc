@@ -16,7 +16,7 @@ class DocumentItem:
 
     _quiet: bool = True
 
-    _block_tags = ["p", "div", "ul", "ol", "blockquote"]  # also headers
+    _block_tags = ["p", "div", "ul", "ol", "blockquote", "img"]  # also headers
     _inline_tags = ["tt", "em", "i", "strong", "b", "s", "sub", "sup", "mark", "q"]
 
     def __repr__(self) -> str:
@@ -44,8 +44,21 @@ class DocumentItem:
 
     def to_str(self) -> str:
         """Return markdown string of this `DocumentItem`."""
+        s = self._make_str()
 
-        if self.tag == "a":
+        if self.is_block:
+            ret = f"\n{s}\n"
+        elif self.tag == "li":
+            ret = f"{s}\n"
+        else:
+            ret = s
+
+        return ret
+
+    def _make_str(self) -> str:
+        """Make markdown string."""
+
+        if self.tag in ["a", "img"]:
             return self._link_to_str()
 
         if self.data is None:
@@ -87,14 +100,7 @@ class DocumentItem:
             if "\n" in s:
                 s = f"```\n{s.strip('\n`')}\n```"
 
-        if self.is_block:
-            ret = f"\n{s}\n"
-        elif self.tag == "li":
-            ret = f"{s}\n"
-        else:
-            ret = s
-
-        return ret
+        return s
 
     def search_parents(self, tag: str) -> Optional[Self]:
         """Search for `tag` in parents."""
@@ -156,22 +162,29 @@ class DocumentItem:
     def _link_to_str(self) -> str:
         """Return markdown string representation of link/anchor."""
 
-        anchor = self.attrs.get("name", None)
-        url = self.attrs.get("href", None)
+        s = ""
 
-        title = "".join(self.data)
+        if self.tag == "img":
+            s = "!"
+            url = self.attrs.get("src", None)
+            title = self.attrs.get("alt", None)
+            anchor = None
+        else:
+            anchor = self.attrs.get("name", None)
+            url = self.attrs.get("href", None)
+            title = "".join(self.data)
 
         if title is not None and anchor is not None:
-            s = f'<a name="{anchor}"></a> {title}'
+            s += f'<a name="{anchor}"></a> {title}'
         elif title is not None and url is not None:
-            s = f"[{title}]({url})"
+            s += f"[{title}]({url})"
         else:
             raise Exception(
-                f"LinkItem requires title and either anchor or url\n"
-                f"{title=}, {url=}, {anchor=}"
+                f"Link requires title and either anchor or url\n" f"{title=}, {url=}, {anchor=}"
             )
 
         s = re.sub(r"\n", " ", s)
+
         return s
 
     def append_data(self, data: Optional[str]):
