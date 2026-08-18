@@ -37,48 +37,59 @@ def transform_internal_link(href: str) -> str:
     return href
 
 
+def check_parent_skip_fmt(func):
+    """
+    If parent tag indicates that format tag should be skipped, return "".
+
+    Otherwise call formatting function.
+    """
+
+    def inner(self, *args, **kwargs) -> bool:
+
+        parent = kwargs.get("parent", None)
+
+        if parent is not None and parent.tag in self._parent_skip_fmt:
+            return ""
+        else:
+            return func(self, *args, **kwargs)
+
+    return inner
+
+
 class HtmlToMd:
     """
-    Class or static/classmethods to return markdown elements for html tags.
+    Class to return markdown elements for html tags.
 
     Use `get` to get the function for a given tag.
+
+    Parameters
+    ----------
+    target_language
+        Target programming language to use for code blocks.
+    shell_language
+        Target shell language for code blocks. Default is "shell".
     """
 
-    _TARGET_LANGUAGE = ""
-    """Target programming language to use for code blocks."""
+    def __init__(
+        self, target_language: Optional[str] = None, shell_language: Optional[str] = None
+    ):
 
-    _SHELL_LANGUAGE = "shell"
-    """Target shell language for code blocks."""
+        self._target_language = target_language if target_language is not None else ""
+        self._shell_language = shell_language if shell_language is not None else "shell"
 
-    @classmethod
-    def set_target_language(cls, target_language: Optional[str]):
-        """Set language to use for 'targetlang' code blocks."""
+        self._parent_skip_fmt = ["pre", "tt", "code"]
 
-        if target_language is None:
-            target_language = ""
-        cls._TARGET_LANGUAGE = target_language
-
-    @classmethod
-    def set_shell_language(cls, shell_language: Optional[str]):
-        """Set language to use fo 'shell' code blocks."""
-
-        if shell_language is None:
-            shell_language = "shell"
-        cls._SHELL_LANGUAGE = shell_language
-
-    @classmethod
-    def get(cls, name: str) -> Callable:
+    def get(self, name: str) -> Callable:
         """Get function to handle `name` html tag."""
 
         if (m := HEADER_REGEX.match(name)) is not None:
-            return partial(cls.h, int(m.group("level")))
+            return partial(self.h, int(m.group("level")))
 
-        if (func := getattr(cls, name, None)) is None:
+        if (func := getattr(self, name, None)) is None:
             return None
         return func
 
-    @classmethod
-    def h(cls, header_level: int, mode: Literal["start", "end"], **kwargs) -> str:
+    def h(self, header_level: int, mode: Literal["start", "end"], **kwargs) -> str:
         """Make markdown header string."""
 
         match mode:
@@ -87,8 +98,7 @@ class HtmlToMd:
             case "end":
                 return "\n"
 
-    @staticmethod
-    def p(mode: Literal["start", "end", "data"], data: str = "", **kwargs) -> str:
+    def p(self, mode: Literal["start", "end", "data"], data: str = "", **kwargs) -> str:
         """Handle paragraph tag."""
 
         match mode:
@@ -99,8 +109,7 @@ class HtmlToMd:
             case "data":
                 return re.sub(r"\n +", "\n", data)
 
-    @classmethod
-    def pre(cls, mode: Literal["start", "end"], parent: Optional[DocumentItem] = None) -> str:
+    def pre(self, mode: Literal["start", "end"], parent: Optional[DocumentItem] = None) -> str:
         """
         Handle code block, using `parent` to get language.
 
@@ -119,9 +128,9 @@ class HtmlToMd:
             new_line = "\n"
 
             if "targetlang" in code_types:
-                code_type = cls._TARGET_LANGUAGE
+                code_type = self._target_language
             elif "shell" in code_types:
-                code_type = cls._SHELL_LANGUAGE
+                code_type = self._shell_language
             elif "code" in code_types:
                 code_type = "swig"
 
@@ -132,8 +141,7 @@ class HtmlToMd:
             case "end":
                 return f"{new_line}{symbol}"
 
-    @staticmethod
-    def title(mode: Literal["start", "end"], **kwargs) -> str:
+    def title(self, mode: Literal["start", "end"], **kwargs) -> str:
         """Handle title tag."""
 
         match mode:
@@ -142,8 +150,7 @@ class HtmlToMd:
             case "end":
                 return "\n===="
 
-    @staticmethod
-    def li(mode: Literal["start", "end"], parent: Optional[DocumentItem] = None) -> str:
+    def li(self, mode: Literal["start", "end"], parent: Optional[DocumentItem] = None) -> str:
         """Handle list item tag."""
 
         match mode:
@@ -164,81 +171,76 @@ class HtmlToMd:
             case "end":
                 return "\n"
 
-    @classmethod
-    def ul(cls, mode: Literal["start", "end"], **kwargs) -> str:
-        return cls._list(mode, **kwargs)
+    def ul(self, mode: Literal["start", "end"], **kwargs) -> str:
+        return self._list(mode, **kwargs)
 
-    @classmethod
-    def ol(cls, mode: Literal["start", "end"], **kwargs) -> str:
-        return cls._list(mode, **kwargs)
+    def ol(self, mode: Literal["start", "end"], **kwargs) -> str:
+        return self._list(mode, **kwargs)
 
-    @classmethod
-    def dl(cls, mode: Literal["start", "end"], **kwargs) -> str:
-        return cls._list(mode, **kwargs)
+    def dl(self, mode: Literal["start", "end"], **kwargs) -> str:
+        return self._list(mode, **kwargs)
 
-    @staticmethod
-    def tt(*args, **kwargs) -> str:
+    def tt(self, *args, **kwargs) -> str:
         return "`"
 
-    @staticmethod
-    def code(*args, **kwargs) -> str:
+    def code(self, *args, **kwargs) -> str:
         return "`"
 
-    @staticmethod
-    def em(*args, **kwargs) -> str:
+    @check_parent_skip_fmt
+    def em(self, *args, **kwargs) -> str:
         return "*"
 
-    @staticmethod
-    def i(*args, **kwargs) -> str:
+    @check_parent_skip_fmt
+    def i(self, *args, **kwargs) -> str:
         return "*"
 
-    @staticmethod
-    def strong(*args, **kwargs) -> str:
+    @check_parent_skip_fmt
+    def strong(self, *args, **kwargs) -> str:
         """Handle <strong> tag (bold)."""
         return "**"
 
-    @staticmethod
-    def b(*args, **kwargs) -> str:
+    @check_parent_skip_fmt
+    def b(self, *args, **kwargs) -> str:
         """Handle <b> tag (bold)."""
         return "**"
 
-    @staticmethod
-    def s(*args, **kwargs) -> str:
+    @check_parent_skip_fmt
+    def s(self, *args, **kwargs) -> str:
         """Handle <s> tag (strikethrough)."""
         return "~~"
 
-    @staticmethod
-    def sub(*args, **kwargs) -> str:
+    @check_parent_skip_fmt
+    def sub(self, *args, **kwargs) -> str:
         """Handle <sub> tag (subscript)."""
         return "~"
 
-    @staticmethod
-    def sup(*args, **kwargs) -> str:
+    @check_parent_skip_fmt
+    def sup(self, *args, **kwargs) -> str:
         """Handle <sup> tag (superscript)."""
         return "^"
 
-    @staticmethod
-    def mark(*args, **kwargs) -> str:
+    @check_parent_skip_fmt
+    def mark(self, *args, **kwargs) -> str:
         """Handle <mark> tag (highlight)."""
         return "=="
 
-    @staticmethod
-    def q(*args, **kwargs) -> str:
+    @check_parent_skip_fmt
+    def q(self, *args, **kwargs) -> str:
         """Handle <q> tag (quote marks)."""
         return '"'
 
-    @staticmethod
-    def hr(*args, **kwargs) -> str:
+    @check_parent_skip_fmt
+    def hr(self, *args, **kwargs) -> str:
         """Handle <hr> tag (horizontal line)."""
         return "\n---\n\n"
 
-    @staticmethod
-    def br(*args, **kwargs) -> str:
+    def br(self, *args, **kwargs) -> str:
         """Handle <br> tag (new line)."""
         return "\n\n"
 
-    @staticmethod
-    def blockquote(mode: Literal["start", "end", "data"], data: str = "", **kwargs) -> str:
+    def blockquote(
+        self, mode: Literal["start", "end", "data"], data: str = "", **kwargs
+    ) -> str:
 
         s = "\n> "
 
@@ -250,29 +252,25 @@ class HtmlToMd:
             case "data":
                 return re.sub(r"\n", s, data)
 
-    @staticmethod
-    def table(mode: Literal["start", "end", "data"], **kwargs) -> str:
+    def table(self, mode: Literal["start", "end", "data"], **kwargs) -> str:
         match mode:
             case "start":
                 return "\n"
             case "end":
                 return ""
 
-    @staticmethod
-    def tr(mode: Literal["start", "end"], **kwargs) -> str:
+    def tr(self, mode: Literal["start", "end"], **kwargs) -> str:
         match mode:
             case "start":
                 return "| "
             case "end":
                 return "\n"
 
-    @classmethod
-    def td(cls, mode: Literal["start", "end"], **kwargs) -> str:
-        return cls._td(mode, **kwargs)
+    def td(self, mode: Literal["start", "end"], **kwargs) -> str:
+        return self._td(mode, **kwargs)
 
-    @classmethod
-    def th(cls, mode: Literal["start", "end"], **kwargs) -> str:
-        return cls._td(mode, **kwargs)
+    def th(self, mode: Literal["start", "end"], **kwargs) -> str:
+        return self._td(mode, **kwargs)
 
     @staticmethod
     def _td(mode: Literal["start", "end"], **kwargs) -> str:
@@ -281,8 +279,7 @@ class HtmlToMd:
         else:
             return ""
 
-    @staticmethod
-    def dt(mode: Literal["start", "end"], **kwargs) -> str:
+    def dt(self, mode: Literal["start", "end"], **kwargs) -> str:
 
         match mode:
             case "start":
@@ -290,8 +287,7 @@ class HtmlToMd:
             case "end":
                 return "\n\n"
 
-    @staticmethod
-    def dd(mode: Literal["start", "end"], **kwargs) -> str:
+    def dd(self, mode: Literal["start", "end"], **kwargs) -> str:
 
         match mode:
             case "start" | "data":

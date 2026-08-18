@@ -58,8 +58,7 @@ class HtmlPageParser(HTMLParser):
 
         super().reset()
 
-        HtmlToMd.set_target_language(target_language)
-        HtmlToMd.set_shell_language(shell_language)
+        self._html_to_md = HtmlToMd(target_language=target_language, shell_language=shell_language)
 
         self._page_title: Optional[str] = None
 
@@ -274,7 +273,7 @@ class HtmlPageParser(HTMLParser):
 
         item = self._new_doc_item(tag, attrs=attrs)
 
-        if (func := HtmlToMd.get(tag)) is not None:
+        if (func := self._html_to_md.get(tag)) is not None:
             s = func("start", parent=item.parent)
             item.append_data(s)
 
@@ -300,7 +299,7 @@ class HtmlPageParser(HTMLParser):
         if item is None:
             return
 
-        if (func := HtmlToMd.get(tag)) is not None:
+        if (func := self._html_to_md.get(tag)) is not None:
             s = func(mode="end", parent=item.parent)
             item.append_data(s)
 
@@ -324,7 +323,7 @@ class HtmlPageParser(HTMLParser):
 
         item = self._new_doc_item(tag, attrs=attrs)
 
-        if (func := HtmlToMd.get(tag)) is not None:
+        if (func := self._html_to_md.get(tag)) is not None:
             s = func(parent=item.parent)
             item.append_data(s)
 
@@ -359,7 +358,7 @@ class HtmlPageParser(HTMLParser):
             item = self._new_doc_item(tag="string")
 
         if item.tag in self._data_tags:
-            func = HtmlToMd.get(item.tag)
+            func = self._html_to_md.get(item.tag)
             data = func("data", data=data)
 
         item.append_data(data)

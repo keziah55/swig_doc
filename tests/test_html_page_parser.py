@@ -458,3 +458,32 @@ def test_convert_image():
     parser.close()
 
     assert parser.doc == expected_md
+
+
+def test_skip_formatting_code():
+
+    html = """
+<div class="shell">
+<pre>
+$ gcc -shared example.o example_wrap.o -L/home/beazley/projects/lib -lfoo \
+ <b>-Xlinker -rpath /home/beazley/projects/lib </b> \
+ -o _example.so
+</pre>
+</div>
+"""
+
+    expected_md = """
+```shell
+
+$ gcc -shared example.o example_wrap.o -L/home/beazley/projects/lib -lfoo \
+ -Xlinker -rpath /home/beazley/projects/lib  \
+ -o _example.so
+
+```
+"""
+
+    parser = HtmlPageParser()
+    parser.feed(html)
+    parser.close()
+
+    assert parser.doc == expected_md
