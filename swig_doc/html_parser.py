@@ -58,7 +58,9 @@ class HtmlPageParser(HTMLParser):
 
         super().reset()
 
-        self._html_to_md = HtmlToMd(target_language=target_language, shell_language=shell_language)
+        self._html_to_md = HtmlToMd(
+            target_language=target_language, shell_language=shell_language
+        )
 
         self._page_title: Optional[str] = None
 
