@@ -91,9 +91,13 @@ class DocumentItem:
                         lines[n] = f"    {line}"
             s = "\n".join(lines)
 
-        elif self.tag in ["tt", "pre"]:
+        elif self.tag == "tt" or (self.tag == "pre" and re.match(r"\s*`(?!`)", s)):
             # tt tag is wrapped with single backquote; if there are multiple lines,
             # switch to triple backquotes
+            # or
+            # pre tag with single backquote (i.e. not within <div>) - check if reformatting
+            # is required
+
             if "\n" in s:
                 s = f"```\n{s.strip('\n`')}\n```"
 
