@@ -487,3 +487,34 @@ $ gcc -shared example.o example_wrap.o -L/home/beazley/projects/lib -lfoo \
     parser.close()
 
     assert parser.doc == expected_md
+
+
+def test_multiline_pre():
+
+    html = """
+<pre>
+
+  cp ccache-swig /usr/local/bin/
+  ln -s /usr/local/bin/ccache-swig /usr/local/bin/gcc
+  ln -s /usr/local/bin/ccache-swig /usr/local/bin/g++
+  ln -s /usr/local/bin/ccache-swig /usr/local/bin/cc
+  ln -s /usr/local/bin/ccache-swig /usr/local/bin/swig
+
+</pre>
+"""
+
+    expected_md = """```
+  cp ccache-swig /usr/local/bin/
+  ln -s /usr/local/bin/ccache-swig /usr/local/bin/gcc
+  ln -s /usr/local/bin/ccache-swig /usr/local/bin/g++
+  ln -s /usr/local/bin/ccache-swig /usr/local/bin/cc
+  ln -s /usr/local/bin/ccache-swig /usr/local/bin/swig
+```"""
+    parser = HtmlPageParser()
+    parser.feed(html)
+    parser.close()
+
+    print()
+    print(parser.doc)
+
+    assert parser.doc == expected_md

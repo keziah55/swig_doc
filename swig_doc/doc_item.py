@@ -64,9 +64,6 @@ class DocumentItem:
         if self.data is None:
             return ""
 
-        if not self._quiet and self.tag in ["ol", "ul"]:
-            print(f"{self.tag}: {self.data}")
-
         s = "".join(self.data)
 
         if self.tag in ["li"]:
@@ -94,7 +91,7 @@ class DocumentItem:
                         lines[n] = f"    {line}"
             s = "\n".join(lines)
 
-        elif self.tag == "tt":
+        elif self.tag in ["tt", "pre"]:
             # tt tag is wrapped with single backquote; if there are multiple lines,
             # switch to triple backquotes
             if "\n" in s:
