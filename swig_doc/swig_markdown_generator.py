@@ -43,7 +43,7 @@ class GitManager:
 
         if self._target_dir is None:
             target_dir = Path(tempfile.mkdtemp(prefix="swig_doc_"))
-            self._git_repo_command_static(target_dir, self._cwd, "clone", self._repo_url)
+            self._git_command("clone", self._repo_url, target_dir)
             self._using_tmp = True
             self._target_dir = target_dir
         else:
