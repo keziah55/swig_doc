@@ -107,6 +107,8 @@ class HtmlToMd:
             case "end":
                 return ""
             case "data":
+                data = re.sub(r"---", "\u2014", data)
+                data = re.sub(r"--", "\u2013", data)
                 return re.sub(r"\n +", "\n", data)
 
     def pre(self, mode: Literal["start", "end"], parent: Optional[DocumentItem] = None) -> str:

@@ -20,7 +20,7 @@
     At the end of the new section is the place to put the aforementioned
     nickname kludges (should they be needed).  See Perl5 for
     examples of what to do.  [If this is still unclear after you've read
-    the code, ping me and I'll expand on this further.  --ttn]
+    the code, ping me and I'll expand on this further.  –ttn]
 
 - **Makefile.in**
 
@@ -37,7 +37,7 @@
     might rely on it.
 
     Here is where you may also define an alias (but then you'll need to
-    kludge --- don't do this):
+    kludge — don't do this):
 
     ```
     skip-qux = $(skip-qux99)

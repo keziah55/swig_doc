@@ -514,7 +514,37 @@ def test_multiline_pre():
     parser.feed(html)
     parser.close()
 
-    print()
-    print(parser.doc)
+    assert parser.doc == expected_md
+
+
+def test_dashes():
+
+    html = """
+<p>This is a paragraph---with an em-dash.
+And also-- an en-dash.</p>
+
+<div class="shell">
+<pre>
+nox --sesion test -- --extra-args
+# triple dash ---
+</pre>
+</div>
+"""
+
+    expected_md = """
+This is a paragraph—with an em-dash.
+And also– an en-dash.
+
+```shell
+
+nox --sesion test -- --extra-args
+# triple dash ---
+
+```
+"""
+
+    parser = HtmlPageParser()
+    parser.feed(html)
+    parser.close()
 
     assert parser.doc == expected_md
