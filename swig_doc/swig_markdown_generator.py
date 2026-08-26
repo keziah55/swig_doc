@@ -6,6 +6,7 @@ import tempfile
 import subprocess
 import os
 from typing import Optional
+import warnings
 
 from .swig_doc_parser import SwigDocParser
 from .md_utils import make_md_head
@@ -253,7 +254,8 @@ class SwigMarkdownGenerator:
         if (m := re.match(r"v(?P<major_minor>\d+\.\d+)\.\d+", tag)) is not None:
             return f"Doc{m.group("major_minor")}"
 
-        raise ValueError(f"Cannot convert '{tag}' to url slug")
+        warnings.warn(f"Cannot convert '{tag}' to url slug; using '{tag}' directly")
+        return tag
 
     @staticmethod
     def _make_nav_group(version: str, index_list: list[str]) -> list[str]:

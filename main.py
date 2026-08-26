@@ -26,7 +26,7 @@ if __name__ == "__main__":
         "--swig-versions",
         nargs="*",
         help="SWIG branches/tags to build docs for",
-        default=["master", "v4.5.0", "v4.4.1"],
+        default=["master", "v4.5.0", "v4.4.1", "v4.3.1", "v4.2.1", "v4.1.1", "v4.0.2"],
     )
     args = parser.parse_args()
 

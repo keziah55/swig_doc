@@ -46,33 +46,19 @@ zensical build
 
 ### Using a local SWIG repo
 
-By default, `main.py` downloads several [`swig`](https://github.com/swig/swig) branches.
+By default, `main.py` clones the [`swig`](https://github.com/swig/swig)
+repo to a temporary directory.
 To instead use locally checked out files, use the `-p` flag.
 
-Note that this should point to a directory containing subdirs with different
-versions of SWIG checked out, for example:
-```
-swig
-├── latest
-│   ├── CCache
-│   ├── Doc
-│   ├── Examples
-│   ├── Lib
-│   ├── Source
-│   ├── Tools
-│   └── Win
-└── v4.5.0
-    ├── CCache
-    ├── Doc
-    ├── Examples
-    ├── Lib
-    ├── Source
-    ├── Tools
-    └── Win
-```
 
-In this example, `latest` is the head of the master branch and `v4.5.0`
-is the tag of the same name.
+### Versions
+
+By default, this tool creates docs for all 4.x versions, as well as the
+HEAD of master branch.
+
+To specify which branches/tags to checkout when building, use the `-v` arg.
+
+Note that, currently, any version < 4 is not guaranteed to work.
 
 
 ## Tests
