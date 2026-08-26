@@ -11,7 +11,7 @@ site for this repo.
 
 ## Dependencies
 
-Install the core python dependencies with
+Install the core python dependencies in a virtual environment with
 ```
 python -m pip install --group base
 ```
