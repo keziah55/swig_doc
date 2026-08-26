@@ -21,9 +21,14 @@ if __name__ == "__main__":
             "directory"
         ),
     )
+    parser.add_argument(
+        "-v",
+        "--swig-versions",
+        nargs="*",
+        help="SWIG branches/tags to build docs for",
+        default=["master", "v4.5.0", "v4.4.1"],
+    )
     args = parser.parse_args()
-
-    swig_refs = ["master", "v4.5.0", "v4.4.1"]
 
     if args.swig_path is not None:
         swig_path = args.swig_path.absolute()
@@ -31,4 +36,4 @@ if __name__ == "__main__":
         swig_path = None
 
     md_generator = SwigMarkdownGenerator(swig_path)
-    md_generator.make_swig_markdown(swig_refs)
+    md_generator.make_swig_markdown(args.swig_versions)
